@@ -1,4 +1,5 @@
 import { Checkbox, FormControlLabel, FormHelperText } from "@mui/material";
+import { useTranslation } from "react-i18next";
 import type { Field } from "../../../types/formTypes";
 
 interface Props {
@@ -14,6 +15,7 @@ const CheckboxField: React.FC<Props> = ({
   error,
   onChange,
 }) => {
+  const { t } = useTranslation();
   return (
     <>
       <FormControlLabel
@@ -23,9 +25,13 @@ const CheckboxField: React.FC<Props> = ({
             onChange={(e) => onChange(field.id, e.target.checked)}
           />
         }
-        label={field.label}
+        label={t(`fields.${field.id}.label`, { defaultValue: field.label })}
       />
-      {error && <FormHelperText error>{error}</FormHelperText>}
+      {error && (
+        <FormHelperText error>
+          {t(error, { defaultValue: error })}
+        </FormHelperText>
+      )}
     </>
   );
 };

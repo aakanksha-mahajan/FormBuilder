@@ -1,4 +1,5 @@
 import { TextField as MuiTextField } from "@mui/material";
+import { useTranslation } from "react-i18next";
 import type { Field } from "../../../types/formTypes";
 
 interface Props {
@@ -17,6 +18,7 @@ const TextField: React.FC<Props> = ({
   onChange,
   type = "text",
 }) => {
+  const { t } = useTranslation();
   const isTime = type === "time" || field.type === "time";
   const isCalculated = field.id === "calculatedTime";
 
@@ -37,13 +39,17 @@ const TextField: React.FC<Props> = ({
       // Dynamically set type (will be "time" for your new fields)
       type={isTime ? "time" : type}
       variant="outlined"
-      label={field.label}
-      placeholder={field.placeholder}
+      label={t(`fields.${field.id}.label`, {
+        defaultValue: field.label,
+      })}
+      placeholder={t(`fields.${field.id}.placeholder`, {
+        defaultValue: field.placeholder,
+      })}
       required={field.mandatory}
       value={value || ""}
       onChange={(e) => handleValueChange(e.target.value)}
       error={!!error}
-      helperText={error}
+      helperText={error ? t(error, { defaultValue: error }) : undefined}
       // This ensures the label doesn't overlap the clock icon in time fields
       InputLabelProps={{
         shrink: isTime ? true : undefined,

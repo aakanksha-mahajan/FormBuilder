@@ -9,11 +9,13 @@ import {
     Card,
     CardContent,
     Divider,
+    Button,
 } from "@mui/material";
 
 import { formJson } from "../../data/formJson";
 import type { Field, Instruction } from "../../types/formTypes";
 import { validateField } from "./utils/validation";
+import { useTranslation } from "react-i18next";
 import RadioField from "./fields/RadioField";
 
 // Instruction components
@@ -30,6 +32,7 @@ import FileField from "./fields/FileField";
 import ButtonGroup from "./fields/ButtonGroup";
 
 const DynamicForm = () => {
+    const { t, i18n } = useTranslation();
     const [formData, setFormData] = useState<Record<string, any>>({});
     const [errors, setErrors] = useState<Record<string, string>>({});
     const [openErrorDialog, setOpenErrorDialog] = useState(false);
@@ -72,7 +75,9 @@ const DynamicForm = () => {
                 return (
                     <TextInstruction
                         key={index}
-                        value={instruction.value}
+                        value={t("instructions.kycText", {
+                            defaultValue: instruction.value,
+                        })}
                     />
                 );
 
@@ -98,7 +103,9 @@ const DynamicForm = () => {
                     <LinkInstruction
                         key={index}
                         value={instruction.value}
-                        label={instruction.label}
+                        label={t("instructions.guidelines", {
+                            defaultValue: instruction.label,
+                        })}
                     />
                 );
 
@@ -227,7 +234,11 @@ const DynamicForm = () => {
             // Simulated API call
             await new Promise((resolve) => setTimeout(resolve, 1000));
 
-            alert(formJson.successResponse.message);
+            alert(
+                t("responses.success", {
+                    defaultValue: formJson.successResponse.message,
+                })
+            );
 
             if (formJson.successResponse.redirect) {
                 window.location.href = formJson.successResponse.redirect.value;
@@ -251,16 +262,54 @@ const DynamicForm = () => {
                     }}
                 >
                     <CardContent sx={{ p: { xs: 3, md: 5 } }}>
-                        <Typography variant="h5" gutterBottom>
-                            {formJson.formMeta.formName}
-                        </Typography>
+                        <Box
+                            sx={{
+                                display: "flex",
+                                justifyContent: "space-between",
+                                alignItems: "center",
+                                mb: 1,
+                                gap: 2,
+                            }}
+                        >
+                            <Typography variant="h5" gutterBottom sx={{ mb: 0 }}>
+                                {t("form.title", {
+                                    defaultValue: formJson.formMeta.formName,
+                                })}
+                            </Typography>
+                            <Box sx={{ display: "flex", gap: 1 }}>
+                                <Button
+                                    size="small"
+                                    variant={
+                                        i18n.language.startsWith("en")
+                                            ? "contained"
+                                            : "outlined"
+                                    }
+                                    onClick={() => i18n.changeLanguage("en")}
+                                >
+                                    EN
+                                </Button>
+                                <Button
+                                    size="small"
+                                    variant={
+                                        i18n.language.startsWith("es")
+                                            ? "contained"
+                                            : "outlined"
+                                    }
+                                    onClick={() => i18n.changeLanguage("es")}
+                                >
+                                    ES
+                                </Button>
+                            </Box>
+                        </Box>
                         <Typography
                             variant="body2"
                             color="text.secondary"
                             sx={{ mb: 3 }}
                         >
-                            Please complete the KYC form. All mandatory fields must be
-                            filled.
+                            {t("form.subtitle", {
+                                defaultValue:
+                                    "Please complete the KYC form. All mandatory fields must be filled.",
+                            })}
                         </Typography>
 
                         <Divider sx={{ mb: 4 }} />
@@ -287,11 +336,15 @@ const DynamicForm = () => {
                             onClose={() => setOpenErrorDialog(false)}
                         >
                             <DialogTitle>
-                                {formJson.failureResponse.title}
+                                {t("dialog.failureTitle", {
+                                    defaultValue: formJson.failureResponse.title,
+                                })}
                             </DialogTitle>
                             <DialogContent>
                                 <Typography>
-                                    {formJson.failureResponse.message}
+                                    {t("dialog.failureMessage", {
+                                        defaultValue: formJson.failureResponse.message,
+                                    })}
                                 </Typography>
                             </DialogContent>
                         </Dialog>

@@ -6,6 +6,7 @@ import {
   Radio,
   FormHelperText,
 } from "@mui/material";
+import { useTranslation } from "react-i18next";
 import type { Field } from "../../../types/formTypes";
 
 interface Props {
@@ -16,10 +17,11 @@ interface Props {
 }
 
 const RadioField: React.FC<Props> = ({ field, value, error, onChange }) => {
+  const { t } = useTranslation();
   return (
     <FormControl error={!!error} component="fieldset" sx={{ mb: 2, display: 'block' }}>
       <FormLabel component="legend" sx={{ fontWeight: 500, mb: 1 }}>
-        {field.label}
+        {t(`fields.${field.id}.label`, { defaultValue: field.label })}
       </FormLabel>
       <RadioGroup 
         row 
@@ -31,11 +33,15 @@ const RadioField: React.FC<Props> = ({ field, value, error, onChange }) => {
             key={opt.value}
             value={opt.value}
             control={<Radio />}
-            label={opt.label}
+            label={t(`fields.${field.id}.options.${opt.value}`, {
+              defaultValue: opt.label,
+            })}
           />
         ))}
       </RadioGroup>
-      {error && <FormHelperText>{error}</FormHelperText>}
+      {error && (
+        <FormHelperText>{t(error, { defaultValue: error })}</FormHelperText>
+      )}
     </FormControl>
   );
 };

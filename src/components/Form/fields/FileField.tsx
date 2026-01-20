@@ -1,4 +1,5 @@
 import { Box, Typography, FormHelperText, Button } from "@mui/material";
+import { useTranslation } from "react-i18next";
 import type { Field } from "../../../types/formTypes";
 
 interface Props {
@@ -9,6 +10,7 @@ interface Props {
 }
 
 const FileField: React.FC<Props> = ({ field, value, error, onChange }) => {
+  const { t } = useTranslation();
   const allowedTypes = field.fileConfig?.allowedTypes
     .map((type) => `.${type}`)
     .join(",");
@@ -16,7 +18,7 @@ const FileField: React.FC<Props> = ({ field, value, error, onChange }) => {
   return (
     <Box sx={{ mt: 2, mb: 2 }}>
       <Typography variant="body2" sx={{ mb: 1, fontWeight: 500 }}>
-        {field.label}
+        {t(`fields.${field.id}.label`, { defaultValue: field.label })}
       </Typography>
       <Box sx={{
         border: "2px dashed #cbd5e1",
@@ -35,11 +37,19 @@ const FileField: React.FC<Props> = ({ field, value, error, onChange }) => {
         />
         <label htmlFor={`file-${field.id}`}>
           <Button variant="text" component="span" sx={{ textTransform: 'none' }}>
-            {value ? value.name : "Click here to upload file"}
+            {value
+              ? value.name
+              : t("file.uploadPrompt", {
+                  defaultValue: "Click here to upload file",
+                })}
           </Button>
         </label>
       </Box>
-      {error && <FormHelperText error>{error}</FormHelperText>}
+      {error && (
+        <FormHelperText error>
+          {t(error, { defaultValue: error })}
+        </FormHelperText>
+      )}
     </Box>
   );
 };

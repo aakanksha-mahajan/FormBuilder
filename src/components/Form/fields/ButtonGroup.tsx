@@ -1,4 +1,5 @@
 import { Box, Button } from "@mui/material";
+import { useTranslation } from "react-i18next";
 import type { Field } from "../../../types/formTypes";
 
 interface Props {
@@ -7,6 +8,7 @@ interface Props {
 }
 
 const ButtonGroup: React.FC<Props> = ({ field, onAction }) => {
+    const { t } = useTranslation();
     return (
         <Box sx={{
             mt: 4,
@@ -24,7 +26,7 @@ const ButtonGroup: React.FC<Props> = ({ field, onAction }) => {
                     key={btn.label}
                     onClick={() => onAction(btn.action)}
                 >
-                    {btn.label}
+                    {t(`buttons.${btn.action}`, { defaultValue: btn.label })}
                 </Button>
             ))}
         </Box>
