@@ -1,0 +1,22 @@
+{
+  "form": {
+    "title": "Verificación KYC del Usuario",
+    "submit": "Enviar",
+    "reset": "Restablecer",
+    "saveDraft": "Guardar borrador"
+  },
+  "instructions": {
+    "kycInfo": "Por favor complete el formulario KYC. Todos los campos obligatorios deben ser llenados.",
+    "guidelines": "Ver directrices KYC"
+  },
+  "fields": {
+    "fullName": "Nombre completo",
+    "email": "Correo electrónico",
+    "gender": "Género",
+    "agreeTerms": "Acepto los términos y condiciones",
+    "identityProof": "Subir prueba de identidad"
+  },
+  "common": {
+    "withinRange": "Dentro del rango"
+  }
+}

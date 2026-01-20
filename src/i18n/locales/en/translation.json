@@ -1,0 +1,22 @@
+{
+  "form": {
+    "title": "User KYC Verification",
+    "submit": "Submit",
+    "reset": "Reset",
+    "saveDraft": "Save Draft"
+  },
+  "instructions": {
+    "kycInfo": "Please complete the KYC form. All mandatory fields must be filled.",
+    "guidelines": "View KYC Guidelines"
+  },
+  "fields": {
+    "fullName": "Full Name",
+    "email": "Email Address",
+    "gender": "Gender",
+    "agreeTerms": "I agree to the Terms & Conditions",
+    "identityProof": "Upload ID Proof"
+  },
+  "common": {
+    "withinRange": "Within Range"
+  }
+}
