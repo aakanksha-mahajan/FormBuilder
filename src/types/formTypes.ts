@@ -16,7 +16,9 @@ export type FieldType =
   | "file"
   | "buttonGroup"
   | "time"
-  | "radio";
+  | "radio"
+  | "textarea"
+  | "date";
 
 // Validation
 export interface ValidationRule {
@@ -24,6 +26,8 @@ export interface ValidationRule {
   maxLength?: number;
   regex?: string;
   mustBeTrue?: boolean;
+  minDate?: string;
+  maxDate?: string;
   errorMessage?: string;
 }
 
@@ -37,13 +41,30 @@ export interface FieldOption {
 export interface FileConfig {
   allowedTypes: string[];
   maxSizeMB: number;
+  multiple?: boolean;
+  maxFiles?: number;
 }
 
 // Button config
 export interface ActionButton {
   label: string;
-  action: "SAVE_DRAFT" | "SUBMIT";
+  action: "SAVE_DRAFT" | "SUBMIT" | "NEXT" | "PREV" | "BACK" | "REDIRECT" | "DOWNLOAD_PDF";
   primary?: boolean;
+  value?: string;
+}
+
+// Navigation Config
+export interface NavigationConfig {
+  prevButton?: ActionButton;
+  nextButton?: ActionButton;
+  submitButton?: ActionButton;
+}
+
+// Review Config
+export interface ReviewConfig {
+  showAllFields?: boolean;
+  editableSteps?: boolean;
+  groupByStep?: boolean;
 }
 
 // Field Interface
@@ -57,6 +78,21 @@ export interface Field {
   validation?: ValidationRule;
   fileConfig?: FileConfig;
   buttons?: ActionButton[];
+  layout?: "horizontal" | "vertical";
+  searchable?: boolean;
+}
+
+// Form Step
+export interface FormStep {
+  stepId: string;
+  stepName?: string;
+  stepTitle?: string;
+  stepDescription?: string;
+  icon?: string;
+  type?: "review";
+  reviewConfig?: ReviewConfig;
+  fields: Field[];
+  navigation?: NavigationConfig;
 }
 
 // Form Meta
@@ -64,21 +100,37 @@ export interface FormMeta {
   formId: string;
   formName: string;
   version: string;
-  submitButtonText: string;
-  resetButtonText: string;
+  type?: "single" | "stepper";
+  submitButtonText?: string;
+  resetButtonText?: string;
+  stepperConfig?: {
+    orientation?: "horizontal" | "vertical";
+    showStepNumbers?: boolean;
+    allowSkip?: boolean;
+    allowJumpToStep?: boolean;
+    showProgressBar?: boolean;
+    validateBeforeNext?: boolean;
+  };
 }
 
 // Submission
 export interface SubmissionConfig {
   apiEndpoint: string;
   method: "POST" | "PUT";
+  includeStepData?: boolean;
+  saveDraftEndpoint?: string;
+  autoSaveDraft?: boolean;
+  autoSaveIntervalSeconds?: number;
 }
 
 // Success / Failure
 export interface ResponseConfig {
-  type: "toast" | "dialog";
+  type: "toast" | "dialog" | "screen";
   title?: string;
   message: string;
+  icon?: string;
+  actions?: ActionButton[];
+  retryButton?: boolean;
   redirect?: {
     type: "route";
     value: string;
@@ -88,9 +140,13 @@ export interface ResponseConfig {
 // Main Form Schema
 export interface FormSchema {
   formMeta: FormMeta;
-  instructions: Instruction[];
-  fields: Field[];
+  instructions?: Instruction | Instruction[];
+  fields?: Field[];
+  steps?: FormStep[];
   submission: SubmissionConfig;
   successResponse: ResponseConfig;
   failureResponse: ResponseConfig;
+  stepMeta?: {
+    isFinalStep?: boolean;
+  };
 }

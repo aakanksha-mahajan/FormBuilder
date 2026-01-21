@@ -6,17 +6,104 @@
     "saveDraft": "Guardar borrador"
   },
   "instructions": {
+    "kycText": "Completa tu incorporación.",
     "kycInfo": "Por favor complete el formulario KYC. Todos los campos obligatorios deben ser llenados.",
     "guidelines": "Ver directrices KYC"
   },
+  "steps": {
+    "personal_info": "Información Personal",
+    "contact_details": "Detalles de Contacto",
+    "documents": "Documentos",
+    "review": "Revisar"
+  },
   "fields": {
-    "fullName": "Nombre completo",
-    "email": "Correo electrónico",
-    "gender": "Género",
+    "firstName": {
+      "label": "Nombre",
+      "placeholder": "Ingresa tu nombre"
+    },
+    "lastName": {
+      "label": "Apellido",
+      "placeholder": "Ingresa tu apellido"
+    },
+    "dob": {
+      "label": "Fecha de Nacimiento"
+    },
+    "gender": {
+      "label": "Género",
+      "options": {
+        "male": "Masculino",
+        "female": "Femenino",
+        "other": "Otro"
+      }
+    },
+    "email": {
+      "label": "Correo Electrónico",
+      "placeholder": "Ingresa tu correo"
+    },
+    "phone": {
+      "label": "Número de Teléfono",
+      "placeholder": "Solo 10 dígitos"
+    },
+    "country": {
+      "label": "País",
+      "placeholder": "Selecciona país",
+      "options": {
+        "IN": "India",
+        "US": "Estados Unidos",
+        "DE": "Alemania",
+        "OTHER": "Otro"
+      }
+    },
+    "address": {
+      "label": "Dirección",
+      "placeholder": "Ingresa tu dirección"
+    },
+    "idProof": {
+      "label": "Prueba de Identidad (Aadhaar/Pasaporte)"
+    },
+    "profilePhoto": {
+      "label": "Foto de Perfil"
+    },
+    "additionalDocs": {
+      "label": "Documentos Adicionales (Opcional)"
+    },
+    "termsAccepted": {
+      "label": "Confirmo que toda la información proporcionada es exacta"
+    },
     "agreeTerms": "Acepto los términos y condiciones",
+    "fullName": "Nombre completo",
     "identityProof": "Subir prueba de identidad"
+  },
+  "validation": {
+    "required": "Este campo es obligatorio",
+    "invalidTime": "Formato de hora inválido",
+    "minLength": "Se requieren mínimo {min} caracteres",
+    "maxLength": "Se permiten máximo {max} caracteres",
+    "invalidFormat": "Formato inválido",
+    "invalidEmail": "Por favor ingresa un correo válido",
+    "invalidPhone": "El número de teléfono debe tener exactamente 10 dígitos",
+    "invalidDate": "Por favor ingresa una fecha válida",
+    "dateRange": "La fecha debe estar entre {min} y {max}",
+    "firstNameLettersOnly": "El nombre debe contener solo letras",
+    "lastNameLettersOnly": "El apellido debe contener solo letras",
+    "ageRequirement": "Debes tener al menos 18 años",
+    "fileTypeNotAllowed": "Tipo de archivo no permitido. Tipos permitidos: {types}",
+    "fileSizeExceeded": "El tamaño del archivo excede el límite de {size}MB",
+    "maxFilesExceeded": "Se permiten máximo {max} archivos",
+    "allFieldsRequired": "Por favor completa todos los campos requeridos"
+  },
+  "buttons": {
+    "next": "Siguiente",
+    "back": "Anterior",
+    "submit": "Enviar",
+    "continue": "Continuar",
+    "cancel": "Cancelar"
+  },
+  "file": {
+    "uploadPrompt": "Haz clic aquí para cargar archivo"
   },
   "common": {
     "withinRange": "Dentro del rango"
   }
 }
+

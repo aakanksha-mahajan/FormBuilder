@@ -6,17 +6,104 @@
     "saveDraft": "Save Draft"
   },
   "instructions": {
+    "kycText": "Complete your onboarding.",
     "kycInfo": "Please complete the KYC form. All mandatory fields must be filled.",
     "guidelines": "View KYC Guidelines"
   },
+  "steps": {
+    "personal_info": "Personal Information",
+    "contact_details": "Contact Details",
+    "documents": "Documents",
+    "review": "Review"
+  },
   "fields": {
-    "fullName": "Full Name",
-    "email": "Email Address",
-    "gender": "Gender",
+    "firstName": {
+      "label": "First Name",
+      "placeholder": "Enter first name"
+    },
+    "lastName": {
+      "label": "Last Name",
+      "placeholder": "Enter last name"
+    },
+    "dob": {
+      "label": "Date of Birth"
+    },
+    "gender": {
+      "label": "Gender",
+      "options": {
+        "male": "Male",
+        "female": "Female",
+        "other": "Other"
+      }
+    },
+    "email": {
+      "label": "Email Address",
+      "placeholder": "Enter email address"
+    },
+    "phone": {
+      "label": "Phone Number",
+      "placeholder": "10 digits only"
+    },
+    "country": {
+      "label": "Country",
+      "placeholder": "Select country",
+      "options": {
+        "IN": "India",
+        "US": "United States",
+        "DE": "Germany",
+        "OTHER": "Other"
+      }
+    },
+    "address": {
+      "label": "Address",
+      "placeholder": "Enter your address"
+    },
+    "idProof": {
+      "label": "ID Proof (Aadhaar/Passport)"
+    },
+    "profilePhoto": {
+      "label": "Profile Photo"
+    },
+    "additionalDocs": {
+      "label": "Additional Documents (Optional)"
+    },
+    "termsAccepted": {
+      "label": "I confirm that all information provided is accurate"
+    },
     "agreeTerms": "I agree to the Terms & Conditions",
+    "fullName": "Full Name",
     "identityProof": "Upload ID Proof"
+  },
+  "validation": {
+    "required": "This field is required",
+    "invalidTime": "Invalid time format",
+    "minLength": "Minimum {min} characters required",
+    "maxLength": "Maximum {max} characters allowed",
+    "invalidFormat": "Invalid format",
+    "invalidEmail": "Please enter a valid email address",
+    "invalidPhone": "Phone number must be exactly 10 digits",
+    "invalidDate": "Please enter a valid date",
+    "dateRange": "Date must be between {min} and {max}",
+    "firstNameLettersOnly": "First Name should contain only letters",
+    "lastNameLettersOnly": "Last Name should contain only letters",
+    "ageRequirement": "You must be at least 18 years old",
+    "fileTypeNotAllowed": "File type not allowed. Allowed types: {types}",
+    "fileSizeExceeded": "File size exceeds {size}MB limit",
+    "maxFilesExceeded": "Maximum {max} files allowed",
+    "allFieldsRequired": "Please fill in all required fields"
+  },
+  "buttons": {
+    "next": "Next",
+    "back": "Back",
+    "submit": "Submit",
+    "continue": "Continue",
+    "cancel": "Cancel"
+  },
+  "file": {
+    "uploadPrompt": "Click here to upload file"
   },
   "common": {
     "withinRange": "Within Range"
   }
 }
+

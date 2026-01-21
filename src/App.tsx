@@ -1,7 +1,7 @@
-import DynamicForm from "./components/Form/DynamicForm";
+import StepperFormUI from "./components/StepperFormUI";
 
 const App = () => {
-  return <DynamicForm />;
+  return <StepperFormUI />;
 };
 
 export default App;

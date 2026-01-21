@@ -1,7 +1,6 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import {
     Box,
-    Container,
     Typography,
     Dialog,
     DialogTitle,
@@ -9,11 +8,14 @@ import {
     Card,
     CardContent,
     Divider,
-    Button,
+    FormControl,
+    InputLabel,
+    Select,
+    MenuItem,
 } from "@mui/material";
 
 import { formJson } from "../../data/formJson";
-import type { Field, Instruction } from "../../types/formTypes";
+import type { Field, FormSchema, Instruction } from "../../types/formTypes";
 import { validateField } from "./utils/validation";
 import { useTranslation } from "react-i18next";
 import RadioField from "./fields/RadioField";
@@ -31,15 +33,98 @@ import CheckboxField from "./fields/CheckboxField";
 import FileField from "./fields/FileField";
 import ButtonGroup from "./fields/ButtonGroup";
 
-const DynamicForm = () => {
-    const { t, i18n } = useTranslation();
-    const [formData, setFormData] = useState<Record<string, any>>({});
-    const [errors, setErrors] = useState<Record<string, string>>({});
-    const [openErrorDialog, setOpenErrorDialog] = useState(false);
+interface Props {
+    /** Optional: when omitted, falls back to existing single-page `formJson` */
+    schema?: FormSchema;
+    /** Optional: prefill values (used by stepper aggregated data) */
+    initialData?: Record<string, any>;
+    /**
+     * Optional: override button actions (used by stepper flow).
+     * If provided, it receives the action + current step data after validations pass.
+     */
+    onAction?: (action: string, data: Record<string, any>) => void;
+    /**
+     * Optional: callback to get current form data (used by StepperFormUI)
+     */
+    onFormDataChange?: (data: Record<string, any>) => void;
+    /**
+     * Optional: validation errors from parent
+     */
+    validationErrors?: Record<string, string>;
+}
 
+const DynamicForm: React.FC<Props> = ({ schema, initialData, onAction, onFormDataChange, validationErrors }) => {
+    const { t, i18n } = useTranslation();
+    const activeSchema = schema ?? formJson;
+
+    const [formData, setFormData] = useState<Record<string, any>>(
+        initialData ?? {}
+    );
+  const [errors, setErrors] = useState<Record<string, string>>(validationErrors ?? {});
+  const [openErrorDialog, setOpenErrorDialog] = useState(false);
+
+  // Helper function to translate error messages with parameters
+  const translateError = (errorMsg: string): string => {
+    if (!errorMsg) return "";
+    
+    // Check if error message has parameters (format: "key|param1,param2")
+    if (errorMsg.includes("|")) {
+      const [key, params] = errorMsg.split("|");
+      const paramArray = params.split(",");
+      
+      if (key === "validation.minLength") {
+        return t(key, { defaultValue: `Minimum ${paramArray[0]} characters required`, min: paramArray[0] });
+      }
+      if (key === "validation.maxLength") {
+        return t(key, { defaultValue: `Maximum ${paramArray[0]} characters allowed`, max: paramArray[0] });
+      }
+      if (key === "validation.maxFilesExceeded") {
+        return t(key, { defaultValue: `Maximum ${paramArray[0]} files allowed`, max: paramArray[0] });
+      }
+      if (key === "validation.fileSizeExceeded") {
+        return t(key, { defaultValue: `File size exceeds ${paramArray[0]}MB limit`, size: paramArray[0] });
+      }
+      if (key === "validation.fileTypeNotAllowed") {
+        return t(key, { defaultValue: `File type not allowed. Allowed types: ${paramArray[0]}`, types: paramArray[0] });
+      }
+    }
+    
+    // For regular translation keys
+    return t(errorMsg, { defaultValue: errorMsg });
+  };
+
+    const instructions = Array.isArray(activeSchema.instructions)
+        ? activeSchema.instructions
+        : activeSchema.instructions
+        ? [activeSchema.instructions]
+        : [];
+    const fields =
+        activeSchema.fields ??
+        (activeSchema.steps && activeSchema.steps.length > 0 
+          ? activeSchema.steps[0].fields 
+          : []);
+
+    // Keep stepper data in sync when switching steps
+    useEffect(() => {
+        if (initialData) setFormData(initialData);
+    }, [initialData]);
+
+    // Update errors from parent validation
+    useEffect(() => {
+        if (validationErrors) {
+            setErrors(validationErrors);
+        }
+    }, [validationErrors]);
+
+    // Notify parent of form data changes
+    useEffect(() => {
+        if (onFormDataChange) {
+            onFormDataChange(formData);
+        }
+    }, [formData, onFormDataChange]);
 
    
-    const handleChange = (id: string, value: any) => {
+  const handleChange = (id: string, value: any) => {
         setFormData((prev) => {
             const newData = { ...prev, [id]: value };
 
@@ -65,13 +150,13 @@ const DynamicForm = () => {
             }
             return newData;
         });
-        setErrors((prev) => ({ ...prev, [id]: "" }));
-    };
+    setErrors((prev) => ({ ...prev, [id]: "" }));
+  };
 
   
-    const renderInstruction = (instruction: Instruction, index: number) => {
-        switch (instruction.type) {
-            case "text":
+  const renderInstruction = (instruction: Instruction, index: number) => {
+    switch (instruction.type) {
+      case "text":
                 return (
                     <TextInstruction
                         key={index}
@@ -81,16 +166,16 @@ const DynamicForm = () => {
                     />
                 );
 
-            case "image":
-                return (
-                    <ImageInstruction
-                        key={index}
-                        value={instruction.value}
-                        altText={instruction.altText}
-                    />
-                );
+      case "image":
+        return (
+          <ImageInstruction
+            key={index}
+            value={instruction.value}
+            altText={instruction.altText}
+          />
+        );
 
-            case "video":
+      case "video":
                 return (
                     <VideoInstruction
                         key={index}
@@ -98,122 +183,148 @@ const DynamicForm = () => {
                     />
                 );
 
-            case "link":
-                return (
-                    <LinkInstruction
-                        key={index}
-                        value={instruction.value}
+      case "link":
+        return (
+          <LinkInstruction
+            key={index}
+            value={instruction.value}
                         label={t("instructions.guidelines", {
                             defaultValue: instruction.label,
                         })}
-                    />
-                );
+          />
+        );
 
-            default:
-                return null;
-        }
-    };
+      default:
+        return null;
+    }
+  };
 
    
-    const renderField = (field: Field) => {
-        const value = formData[field.id];
-        const error = errors[field.id];
+  const renderField = (field: Field) => {
+    const value = formData[field.id];
+    const error = errors[field.id];
 
-        switch (field.type) {
-            case "text":
+    switch (field.type) {
+      case "text":
             case "time":
-                return (
-                    <TextField
+            case "date":
+        return (
+          <TextField
                         key={field.id}
                         field={field}
                         value={value}
                         error={error}
                         onChange={handleChange}
-                        type={field.type === "time" ? "time" : "text"}
+                        type={field.type === "time" ? "time" : field.type === "date" ? "date" : "text"}
+                        translateError={translateError}
                     />
                 );
             case "radio":  
                 return (
                     <RadioField
-                        key={field.id}
-                        field={field}
-                        value={value}
-                        error={error}
-                        onChange={handleChange}
-                    />
-                );
-            case "dropdown":
-                return (
-                    <DropdownField
-                        key={field.id}
-                        field={field}
-                        value={value}
-                        error={error}
-                        onChange={handleChange}
-                    />
-                );
+            key={field.id}
+            field={field}
+            value={value}
+            error={error}
+            onChange={handleChange}
+          />
+        );
+      case "dropdown":
+        return (
+          <DropdownField
+            key={field.id}
+            field={field}
+            value={value}
+            error={error}
+            onChange={handleChange}
+          />
+        );
 
-            case "checkbox":
-                return (
-                    <CheckboxField
-                        key={field.id}
-                        field={field}
-                        value={value}
-                        error={error}
-                        onChange={handleChange}
-                    />
-                );
+      case "checkbox":
+        return (
+          <CheckboxField
+            key={field.id}
+            field={field}
+            value={value}
+            error={error}
+            onChange={handleChange}
+          />
+        );
 
-            case "file":
-                return (
-                    <FileField
-                        key={field.id}
-                        field={field}
-                        value={value}
-                        error={error}
-                        onChange={handleChange}
-                    />
-                );
+      case "textarea":
+        return (
+          <TextField
+            key={field.id}
+            field={field}
+            value={value}
+            error={error}
+            onChange={handleChange}
+            type="textarea"
+          />
+        );
 
-            case "buttonGroup":
-                return (
-                    <ButtonGroup
-                        key={field.id}
-                        field={field}
-                        onAction={handleAction}
-                    />
-                );
+      case "file":
+        return (
+          <FileField
+            key={field.id}
+            field={field}
+            value={value}
+            error={error}
+            onChange={handleChange}
+            translateError={translateError}
+          />
+        );
 
-            default:
-                return null;
-        }
-    };
+      case "buttonGroup":
+        return (
+          <ButtonGroup
+            key={field.id}
+            field={field}
+            onAction={handleAction}
+          />
+        );
+
+      default:
+        return null;
+    }
+  };
 
    
     const runValidation = (): boolean => {
-        const newErrors: Record<string, string> = {};
-        let hasError = false;
+    const newErrors: Record<string, string> = {};
+    let hasError = false;
 
-        formJson.fields.forEach((field) => {
-            if (field.type !== "buttonGroup") {
-                const error = validateField(field, formData[field.id]);
-                if (error) {
-                    hasError = true;
-                    newErrors[field.id] = error;
-                }
-            }
-        });
+    fields.forEach((field) => {
+      if (field.type !== "buttonGroup") {
+        const error = validateField(field, formData[field.id]);
+        if (error) {
+          hasError = true;
+          newErrors[field.id] = error;
+        }
+      }
+    });
 
-        setErrors(newErrors);
+    setErrors(newErrors);
 
         return hasError;
     };
 
     
     const handleAction = (action: string) => {
-        if (action === "SAVE_DRAFT") {
+        // For stepper actions (NEXT/BACK), we still want the same validation behavior as submit.
+        if (action === "SAVE_DRAFT" || action === "SUBMIT" || action === "NEXT") {
             const hasError = runValidation();
             if (hasError) return;
+        }
+
+        // If parent controls actions (stepper flow), delegate after validation
+        if (onAction) {
+            onAction(action, formData);
+            return;
+        }
+
+        // Default single-page behavior
+        if (action === "SAVE_DRAFT") {
             console.log("Draft saved:", formData);
             return;
         }
@@ -226,42 +337,42 @@ const DynamicForm = () => {
    
     const handleSubmit = async () => {
         const hasError = runValidation();
-        if (hasError) return;
+    if (hasError) return;
 
-        try {
-            console.log("Submitting data:", formData);
+    try {
+      console.log("Submitting data:", formData);
 
-            // Simulated API call
-            await new Promise((resolve) => setTimeout(resolve, 1000));
+      // Simulated API call
+      await new Promise((resolve) => setTimeout(resolve, 1000));
 
             alert(
                 t("responses.success", {
-                    defaultValue: formJson.successResponse.message,
+                    defaultValue: activeSchema.successResponse.message,
                 })
             );
 
-            if (formJson.successResponse.redirect) {
-                window.location.href = formJson.successResponse.redirect.value;
-            }
-        } catch (error) {
-            setOpenErrorDialog(true);
-        }
-    };
+            if (activeSchema.successResponse.redirect) {
+                window.location.href = activeSchema.successResponse.redirect.value;
+      }
+    } catch (error) {
+      setOpenErrorDialog(true);
+    }
+  };
 
    
-    
-    return (
-        <Box sx={{ minHeight: '100vh', display: 'flex', alignItems: 'center', py: 8, bgcolor: 'background.default' }}>
-            <Container maxWidth="md">
-                <Card
-                    elevation={0}
-                    sx={{
-                        border: "1px solid #e2e8f0",
-                        borderRadius: 4,
-                        boxShadow: "0 10px 15px -3px rgb(0 0 0 / 0.1)"
-                    }}
-                >
-                    <CardContent sx={{ p: { xs: 3, md: 5 } }}>
+
+  return (
+        <Box sx={{ width: '100%' }}>
+            <Card
+                elevation={0}
+                sx={{
+                    border: "none",
+                    borderRadius: 0,
+                    boxShadow: "none",
+                    width: '100%'
+                }}
+            >
+                <CardContent sx={{ p: { xs: 2, md: 3 } }}>
                         <Box
                             sx={{
                                 display: "flex",
@@ -273,33 +384,31 @@ const DynamicForm = () => {
                         >
                             <Typography variant="h5" gutterBottom sx={{ mb: 0 }}>
                                 {t("form.title", {
-                                    defaultValue: formJson.formMeta.formName,
+                                    defaultValue: activeSchema.formMeta.formName,
                                 })}
-                            </Typography>
-                            <Box sx={{ display: "flex", gap: 1 }}>
-                                <Button
-                                    size="small"
-                                    variant={
-                                        i18n.language.startsWith("en")
-                                            ? "contained"
-                                            : "outlined"
-                                    }
-                                    onClick={() => i18n.changeLanguage("en")}
-                                >
-                                    EN
-                                </Button>
-                                <Button
-                                    size="small"
-                                    variant={
+</Typography>
+                            <FormControl size="small" sx={{ minWidth: 160 }}>
+                                <InputLabel id="language-select-label">
+                                    Language
+                                </InputLabel>
+                                <Select
+                                    labelId="language-select-label"
+                                    label="Language"
+                                    value={
                                         i18n.language.startsWith("es")
-                                            ? "contained"
-                                            : "outlined"
+                                            ? "es"
+                                            : "en"
                                     }
-                                    onClick={() => i18n.changeLanguage("es")}
+                                    onChange={(e) =>
+                                        i18n.changeLanguage(
+                                            String(e.target.value)
+                                        )
+                                    }
                                 >
-                                    ES
-                                </Button>
-                            </Box>
+                                    <MenuItem value="en">English</MenuItem>
+                                    <MenuItem value="es">Spanish</MenuItem>
+                                </Select>
+                            </FormControl>
                         </Box>
                         <Typography
                             variant="body2"
@@ -310,49 +419,54 @@ const DynamicForm = () => {
                                 defaultValue:
                                     "Please complete the KYC form. All mandatory fields must be filled.",
                             })}
-                        </Typography>
+</Typography>
 
                         <Divider sx={{ mb: 4 }} />
 
                         {/* Styled Instructions area */}
-                        <Box sx={{
+      <Box sx={{
                             backgroundColor: "#f1f5f9",
                             p: 3,
                             borderRadius: 3,
-                            mb: 4,
+    mb: 4,
                             border: "1px solid #e2e8f0"
-                        }}>
-                            {formJson.instructions.map(renderInstruction)}
-                        </Box>
+  }}>
+                            {instructions.map(renderInstruction)}
+      </Box>
 
-                        {/* Fields */}
+      {/* Fields */}
                         <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
-                            {formJson.fields.map(renderField)}
-                        </Box>
+                            {fields && fields.length > 0 ? (
+                              fields.map(renderField)
+                            ) : (
+                              <Typography color="warning.main" sx={{ py: 2, textAlign: 'center', fontStyle: 'italic' }}>
+                                No fields configured for this step. Please check the form configuration.
+                              </Typography>
+                            )}
+      </Box>
 
-                        {/* Failure Dialog */}
+      {/* Failure Dialog */}
                         <Dialog
                             open={openErrorDialog}
                             onClose={() => setOpenErrorDialog(false)}
                         >
                             <DialogTitle>
                                 {t("dialog.failureTitle", {
-                                    defaultValue: formJson.failureResponse.title,
+                                    defaultValue: activeSchema.failureResponse.title,
                                 })}
                             </DialogTitle>
-                            <DialogContent>
+        <DialogContent>
                                 <Typography>
                                     {t("dialog.failureMessage", {
-                                        defaultValue: formJson.failureResponse.message,
+                                        defaultValue: activeSchema.failureResponse.message,
                                     })}
                                 </Typography>
-                            </DialogContent>
-                        </Dialog>
-                    </CardContent>
-                </Card>
-            </Container>
+        </DialogContent>
+      </Dialog>
+                </CardContent>
+            </Card>
         </Box>
-    );
+  );
 };
 
 export default DynamicForm;

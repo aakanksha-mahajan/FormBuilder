@@ -6,7 +6,14 @@ interface Props {
 
 const TextInstruction: React.FC<Props> = ({ value }) => {
   return (
-    <Typography variant="body1" sx={{ mb: 2 }}>
+    <Typography 
+      variant="body1" 
+      sx={{ 
+        // mb: 1,
+        textAlign: 'center',
+        fontWeight: 500
+      }}
+    >
       {value}
     </Typography>
   );

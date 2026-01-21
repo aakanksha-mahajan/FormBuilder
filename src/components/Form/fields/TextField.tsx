@@ -8,7 +8,9 @@ interface Props {
   error?: string;
   onChange: (id: string, value: any) => void;
   // Added type prop to support "time" or "text"
-  type?: string; 
+  type?: string;
+  // Added prop for error translation
+  translateError?: (error: string) => string;
 }
 
 const TextField: React.FC<Props> = ({
@@ -17,9 +19,12 @@ const TextField: React.FC<Props> = ({
   error,
   onChange,
   type = "text",
+  translateError,
 }) => {
   const { t } = useTranslation();
   const isTime = type === "time" || field.type === "time";
+  const isDate = type === "date" || field.type === "date";
+  const isTextarea = type === "textarea" || field.type === "textarea";
   const isCalculated = field.id === "calculatedTime";
 
   const handleValueChange = (raw: string) => {
@@ -30,29 +35,50 @@ const TextField: React.FC<Props> = ({
       return;
     }
 
+    // Phone number: only digits, max 10 characters
+    if (field.id === "phone") {
+      const sanitized = raw.replace(/[^0-9]/g, "").slice(0, 10);
+      onChange(field.id, sanitized);
+      return;
+    }
+
+    // Date field (DOB): limit year to 4 digits
+    if (isDate && raw) {
+      // Format: YYYY-MM-DD
+      const parts = raw.split("-");
+      if (parts[0] && parts[0].length > 4) {
+        // Limit year to 4 digits, keep the rest
+        const limitedDate = parts[0].slice(0, 4) + (parts[1] ? `-${parts[1]}` : "") + (parts[2] ? `-${parts[2]}` : "");
+        onChange(field.id, limitedDate);
+        return;
+      }
+    }
+
     onChange(field.id, raw);
   };
 
   return (
     <MuiTextField
       fullWidth
-      // Dynamically set type (will be "time" for your new fields)
-      type={isTime ? "time" : type}
+      // Dynamically set type
+      type={isTime ? "time" : isDate ? "date" : "text"}
+      multiline={isTextarea}
+      rows={isTextarea ? 4 : undefined}
       variant="outlined"
       label={t(`fields.${field.id}.label`, {
         defaultValue: field.label,
       })}
-      placeholder={t(`fields.${field.id}.placeholder`, {
+      placeholder={field.placeholder ? t(`fields.${field.id}.placeholder`, {
         defaultValue: field.placeholder,
-      })}
+      }) : ""}
       required={field.mandatory}
       value={value || ""}
       onChange={(e) => handleValueChange(e.target.value)}
       error={!!error}
-      helperText={error ? t(error, { defaultValue: error }) : undefined}
-      // This ensures the label doesn't overlap the clock icon in time fields
+      helperText={error ? (translateError ? translateError(error) : t(error, { defaultValue: error })) : undefined}
+      // This ensures the label doesn't overlap for time/date fields
       InputLabelProps={{
-        shrink: isTime ? true : undefined,
+        shrink: isTime || isDate ? true : undefined,
       }}
       InputProps={{
         readOnly: isCalculated,
