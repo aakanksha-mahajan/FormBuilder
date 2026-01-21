@@ -104,6 +104,12 @@
   },
   "common": {
     "withinRange": "Dentro del rango"
+  },
+  "config": {
+    "title": "Problema de configuración",
+    "noSteps": "No hay pasos configurados para este formulario. Compruebe la configuración del formulario.",
+    "noFields": "Este paso no tiene campos configurados. Compruebe la configuración del formulario.",
+    "stepNotConfigured": "Este paso no está configurado correctamente. Compruebe la configuración del formulario."
   }
 }
 

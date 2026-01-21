@@ -51,9 +51,13 @@ interface Props {
      * Optional: validation errors from parent
      */
     validationErrors?: Record<string, string>;
+    /**
+     * Optional: when step is misconfigured (e.g. null), show this in the fields area instead of config.noFields
+     */
+    configIssueOverride?: string;
 }
 
-const DynamicForm: React.FC<Props> = ({ schema, initialData, onAction, onFormDataChange, validationErrors }) => {
+const DynamicForm: React.FC<Props> = ({ schema, initialData, onAction, onFormDataChange, validationErrors, configIssueOverride }) => {
     const { t, i18n } = useTranslation();
     const activeSchema = schema ?? formJson;
 
@@ -98,11 +102,13 @@ const DynamicForm: React.FC<Props> = ({ schema, initialData, onAction, onFormDat
         : activeSchema.instructions
         ? [activeSchema.instructions]
         : [];
-    const fields =
-        activeSchema.fields ??
-        (activeSchema.steps && activeSchema.steps.length > 0 
-          ? activeSchema.steps[0].fields 
-          : []);
+    // Edge cases: fields can be undefined, null, [], or non-array (e.g. {}). Always produce an array of valid field objects.
+    const raw =
+        activeSchema?.fields ??
+        (activeSchema?.steps?.[0]?.fields);
+    const fields = (Array.isArray(raw) ? raw : []).filter(
+        (f): f is Field => !!f && typeof f === "object" && "id" in f
+    );
 
     // Keep stepper data in sync when switching steps
     useEffect(() => {
@@ -426,7 +432,7 @@ const DynamicForm: React.FC<Props> = ({ schema, initialData, onAction, onFormDat
                         {/* Styled Instructions area */}
       <Box sx={{
                             backgroundColor: "#f1f5f9",
-                            p: 3,
+                            p: 2,
                             borderRadius: 3,
     mb: 4,
                             border: "1px solid #e2e8f0"
@@ -434,13 +440,13 @@ const DynamicForm: React.FC<Props> = ({ schema, initialData, onAction, onFormDat
                             {instructions.map(renderInstruction)}
       </Box>
 
-      {/* Fields */}
+      {/* Fields - config issue appears here when no/empty/invalid fields, so the rest of the form (title, instructions, buttons) stays the same */}
                         <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
-                            {fields && fields.length > 0 ? (
+                            {fields.length > 0 ? (
                               fields.map(renderField)
                             ) : (
-                              <Typography color="warning.main" sx={{ py: 2, textAlign: 'center', fontStyle: 'italic' }}>
-                                No fields configured for this step. Please check the form configuration.
+                              <Typography color="warning.main" sx={{ py: 2, textAlign: 'center' }}>
+                                {configIssueOverride ?? t("config.noFields", { defaultValue: "This step does not have any fields configured. Please check the form configuration." })}
                               </Typography>
                             )}
       </Box>

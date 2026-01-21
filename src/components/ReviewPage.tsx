@@ -30,12 +30,12 @@ const ReviewPage: React.FC<ReviewPageProps> = ({ allFormData, validationErrors, 
       data: Record<string, any>;
     }> = [];
 
-    // Iterate through all steps except the review step
-    const reviewSteps = (formJson.steps || []).filter((step) => step.stepId !== "review");
+    // Iterate through all steps except the review step (skip null/undefined)
+    const reviewSteps = (formJson?.steps || []).filter((step) => step != null && step.stepId !== "review");
 
     reviewSteps.forEach((step) => {
       const stepData: Record<string, any> = {};
-      const stepFields = step.fields || [];
+      const stepFields = step?.fields || [];
 
       stepFields.forEach((field) => {
         if (allFormData[field.id] !== undefined && allFormData[field.id] !== null && allFormData[field.id] !== "") {

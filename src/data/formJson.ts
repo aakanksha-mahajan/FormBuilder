@@ -45,7 +45,7 @@ export const formJson: FormSchema = {
           type: "text",
           label: "Last Name",
           placeholder: "Enter last name",
-          mandatory: false,
+          mandatory: true,
           validation: {
             minLength: 2,
             maxLength: 30,
@@ -74,6 +74,9 @@ export const formJson: FormSchema = {
             { label: "Female", value: "female" },
             { label: "Other", value: "other" },
           ],
+          validation: {
+            errorMessage: "Required",
+          },
           layout: "horizontal",
         },
       ],
@@ -122,6 +125,9 @@ export const formJson: FormSchema = {
             { label: "Germany", value: "DE" },
             { label: "Other", value: "OTHER" },
           ],
+          validation: {
+            errorMessage: "Required",
+          },
           searchable: true,
         },
         {
@@ -170,6 +176,9 @@ export const formJson: FormSchema = {
             maxSizeMB: 2,
             multiple: false,
           },
+          validation: {
+            errorMessage: "Please upload a valid Profile Photo",
+          },
         },
         {
           id: "additionalDocs",
@@ -180,11 +189,13 @@ export const formJson: FormSchema = {
             allowedTypes: ["pdf", "jpg", "png", "doc", "docx"],
             maxSizeMB: 10,
             multiple: true,
-            maxFiles: 5,
+          },
+          validation: {
+            errorMessage: "Please upload a valid documents",
           },
         },
       ],
-      navigation: {
+    navigation: {
         prevButton: { label: "Back", action: "PREV" },
         nextButton: { label: "Review & Submit", action: "NEXT" },
       },

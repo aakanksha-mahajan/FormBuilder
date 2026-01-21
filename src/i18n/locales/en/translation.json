@@ -104,6 +104,12 @@
   },
   "common": {
     "withinRange": "Within Range"
+  },
+  "config": {
+    "title": "Configuration issue",
+    "noSteps": "No steps are configured for this form. Please check the form configuration.",
+    "noFields": "This step does not have any fields configured. Please check the form configuration.",
+    "stepNotConfigured": "This step is not properly configured. Please check the form configuration."
   }
 }
 

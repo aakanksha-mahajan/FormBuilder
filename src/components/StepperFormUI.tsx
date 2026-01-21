@@ -12,13 +12,17 @@ import { useTranslation } from "react-i18next";
 import DynamicForm from "./Form/DynamicForm";
 import SuccessScreen from "./SuccessScreen";
 import ReviewPage from "./ReviewPage";
-import type { FormSchema, FormStep } from "../types/formTypes";
+import type { Field, FormSchema, FormStep } from "../types/formTypes";
 import { formJson } from "../data/formJson";
 import { validateField } from "./Form/utils/validation";
 
+// Filter to valid steps only (non-null, has stepId) so missing/malformed entries don't break the UI
+const getValidSteps = (): FormStep[] =>
+  (formJson?.steps || []).filter((s): s is FormStep => !!(s != null && (s as FormStep).stepId));
+
 const StepperFormUI = () => {
   const { t } = useTranslation();
-  const steps: FormStep[] = formJson.steps || [];
+  const steps: FormStep[] = useMemo(() => getValidSteps(), []);
 
   const [activeStepIndex, setActiveStepIndex] = useState(0);
   const [formDataByStep, setFormDataByStep] = useState<
@@ -28,7 +32,17 @@ const StepperFormUI = () => {
   const [validationErrors, setValidationErrors] = useState<Record<string, string>>({});
   const [isSubmitted, setIsSubmitted] = useState(false);
 
-  const activeStep = steps[activeStepIndex];
+  const safeStepIndex = steps.length === 0 ? 0 : Math.min(activeStepIndex, steps.length - 1);
+  const activeStep = steps[safeStepIndex] ?? null;
+
+  // Normalize fields: undefined, null, non-array, or entries without id/type can break the UI. Use only valid field objects.
+  const stepFields = useMemo(
+    () =>
+      (Array.isArray(activeStep?.fields) ? activeStep.fields : []).filter(
+        (f): f is Field => !!f && typeof f === "object" && "id" in f
+      ),
+    [activeStep?.fields]
+  );
 
   // Clear validation errors when switching steps
   useEffect(() => {
@@ -42,10 +56,13 @@ const StepperFormUI = () => {
       if (Object.keys(formDataRef).length === 0) {
         return; // Skip validation on initial empty state
       }
+      if (!stepFields.length) {
+        return; // No fields to validate (e.g. configuration issue)
+      }
 
       const newErrors: Record<string, string> = {};
 
-      activeStep?.fields.forEach((field) => {
+      stepFields.forEach((field) => {
         const fieldValue = formDataRef[field.id];
         // Only validate fields with values (user has typed something)
         if (fieldValue !== undefined && fieldValue !== null && fieldValue !== "") {
@@ -71,10 +88,10 @@ const StepperFormUI = () => {
     return merged;
   }, [formDataByStep]);
 
-  // Create a schema for the current step
+  // Create a schema for the current step (stepFields is already normalized)
   const currentStepSchema: FormSchema = {
     ...formJson,
-    fields: activeStep?.fields || [],
+    fields: stepFields,
     formMeta: {
       ...formJson.formMeta,
       formName: activeStep?.stepName || "Step",
@@ -83,24 +100,19 @@ const StepperFormUI = () => {
 
   // Validate current step fields
   const validateCurrentStep = (): boolean => {
+    if (!stepFields.length) return true; // No fields or misconfigured step: allow navigation
+
     const newErrors: Record<string, string> = {};
     let hasError = false;
 
-    activeStep?.fields.forEach((field) => {
+    stepFields.forEach((field) => {
       const fieldValue = formDataRef[field.id];
       const error = validateField(field, fieldValue);
-      
+
       if (error) {
         hasError = true;
         newErrors[field.id] = error;
       }
-    });
-
-    console.log("Validation Check:", {
-      activeStepId: activeStep?.stepId,
-      formDataRef,
-      newErrors,
-      hasError
     });
 
     setValidationErrors(newErrors);
@@ -108,63 +120,52 @@ const StepperFormUI = () => {
   };
 
   const handleNext = () => {
-    // Validate before moving to next step
-    if (!validateCurrentStep()) {
-      return;
+    // Validate before moving to next step (no-op when step has no fields / misconfigured)
+    if (!validateCurrentStep()) return;
+
+    // Store current step data only when step is properly configured
+    if (activeStep?.stepId) {
+      setFormDataByStep((prev) => ({
+        ...prev,
+        [activeStep.stepId]: formDataRef,
+      }));
     }
 
-    // Store current step data from the form
-    setFormDataByStep((prev) => ({
-      ...prev,
-      [activeStep.stepId]: formDataRef,
-    }));
-
-    // Move to next step
     if (activeStepIndex < steps.length - 1) {
-      setActiveStepIndex(activeStepIndex + 1);
+      setActiveStepIndex((i) => Math.min(i + 1, steps.length - 1));
       setValidationErrors({});
-      // Reset formDataRef for the new step (it will be populated from aggregatedData via initialData)
       setFormDataRef({});
     }
   };
 
   const handleBack = () => {
-    if (activeStepIndex > 0) {
-      setActiveStepIndex(activeStepIndex - 1);
+    if (safeStepIndex > 0) {
+      setActiveStepIndex((i) => Math.max(0, Math.min(i, steps.length - 1) - 1));
       setValidationErrors({});
-      // Reset formDataRef for the previous step
       setFormDataRef({});
     }
   };
 
   const handleSubmit = () => {
-    // Validate before submitting
-    if (!validateCurrentStep()) {
-      return;
+    if (!activeStep) return; // Misconfigured or out-of-bounds step: do not submit
+    if (!validateCurrentStep()) return;
+
+    if (activeStep.stepId) {
+      setFormDataByStep((prev) => ({
+        ...prev,
+        [activeStep.stepId]: formDataRef,
+      }));
     }
 
-    // Store final step data
-    setFormDataByStep((prev) => ({
-      ...prev,
-      [activeStep.stepId]: formDataRef,
-    }));
-
-    // Merge all data
-    const finalData = {
-      ...aggregatedData,
-      ...formDataRef,
-    };
-
+    const finalData = { ...aggregatedData, ...formDataRef };
     console.log("Form validated and ready for submission:", finalData);
-
-    // Show success screen (API integration will be added later)
     setIsSubmitted(true);
   };
 
-  const isLastStep = activeStepIndex === steps.length - 1;
+  const isLastStep = safeStepIndex === steps.length - 1;
 
   // Show success screen if form was submitted
-  if (isSubmitted && formJson.successResponse) {
+  if (isSubmitted && formJson?.successResponse) {
     return (
       <SuccessScreen
         title={formJson.successResponse.title || "Success"}
@@ -191,103 +192,74 @@ const StepperFormUI = () => {
         alignItems: 'center'
       }}>
         <Box sx={{ maxWidth: 900, width: '100%' }}>
-          {/* Stepper */}
-          <Stepper activeStep={activeStepIndex} sx={{ mb: 6, mt: 6 }}>
-            {steps.map((step) => (
-              <Step key={step.stepId}>
-                <StepLabel>
-                  {t(`steps.${step.stepId}`, { defaultValue: step.stepName })}
-                </StepLabel>
-              </Step>
-            ))}
-          </Stepper>
+          {steps.length === 0 ? (
+            /* No steps at all: show configuration issue only, no stepper/buttons */
+            <Alert severity="warning" sx={{ mt: 6 }}>
+              <Typography variant="h6" sx={{ mb: 1, fontWeight: 600 }}>
+                {t("config.title", { defaultValue: "Configuration issue" })}
+              </Typography>
+              <Typography variant="body2">
+                {t("config.noSteps", { defaultValue: "No steps are configured for this form. Please check the form configuration." })}
+              </Typography>
+            </Alert>
+          ) : (
+            <>
+              {/* Stepper - always shown when we have at least one step */}
+              <Stepper activeStep={safeStepIndex} sx={{ mb: 6, mt: 6 }}>
+                {steps.map((step) => (
+                  <Step key={step.stepId}>
+                    <StepLabel>
+                      {t(`steps.${step.stepId}`, { defaultValue: step.stepName })}
+                    </StepLabel>
+                  </Step>
+                ))}
+              </Stepper>
 
-          {/* Current Step Form or Review Page */}
-          {activeStep ? (
-            <Box sx={{ mt: 6 }}>
-              {/* Check if step has fields */}
-              {(!activeStep.fields || activeStep.fields.length === 0) && activeStep.stepId !== "review" ? (
-                <Alert severity="warning" sx={{ mb: 3 }}>
-                  <Typography variant="h6" sx={{ mb: 1, fontWeight: 600 }}>
-                    No Fields Configured
-                  </Typography>
-                  <Typography variant="body2">
-                    The step "{activeStep.stepName}" doesn't have any fields configured. Please check the JSON configuration.
-                  </Typography>
-                </Alert>
-              ) : (
-                <>
-                  {/* Validation Error Alert - Top of Form (only show on non-review steps) */}
-                  {activeStep.stepId !== "review" && Object.keys(validationErrors).length > 0 && (
-                    <Alert severity="error" sx={{ mb: 3 }}>
-                      {t("validation.allFieldsRequired", { defaultValue: "Please fill in all required fields" })}
-                    </Alert>
-                  )}
-
-                  {/* Render ReviewPage for review step, DynamicForm for others */}
-                  {activeStep.stepId === "review" ? (
-                    <ReviewPage
-                      allFormData={{
-                        ...aggregatedData,
-                        ...formDataRef,
-                      }}
-                      validationErrors={validationErrors}
-                      onCheckboxChange={(checked) => {
-                        setFormDataRef((prev) => ({
-                          ...prev,
-                          termsAccepted: checked,
-                        }));
-                      }}
-                    />
-                  ) : (
+              {/* Current Step: form (DynamicForm) or review. Config issue appears only in the fields area so stepper and buttons stay in place. */}
+              <Box sx={{ mt: 6 }}>
+                {activeStep?.stepId === "review" ? (
+                  <ReviewPage
+                    allFormData={{ ...aggregatedData, ...formDataRef }}
+                    validationErrors={validationErrors}
+                    onCheckboxChange={(checked) => {
+                      setFormDataRef((prev) => ({ ...prev, termsAccepted: checked }));
+                    }}
+                  />
+                ) : (
+                  <>
+                    {Object.keys(validationErrors).length > 0 && (
+                      <Alert severity="error" sx={{ mb: 3 }}>
+                        {t("validation.allFieldsRequired", { defaultValue: "Please fill in all required fields" })}
+                      </Alert>
+                    )}
                     <DynamicForm
                       schema={currentStepSchema}
                       initialData={aggregatedData}
                       onFormDataChange={setFormDataRef}
                       validationErrors={validationErrors}
+                      configIssueOverride={!activeStep ? t("config.stepNotConfigured", { defaultValue: "This step is not properly configured. Please check the form configuration." }) : undefined}
                     />
-                  )}
-                </>
-              )}
+                  </>
+                )}
 
-              {/* Navigation Buttons - Right side of form */}
-              <Box sx={{ display: 'flex', justifyContent: 'flex-end', gap: 2, mt: 3 }}>
-                {activeStepIndex > 0 && (
+                {/* Navigation Buttons - always shown when we have steps, same position */}
+                <Box sx={{ display: 'flex', justifyContent: 'flex-end', gap: 2, mt: 3 }}>
+                  {safeStepIndex > 0 && (
+                    <Button variant="outlined" onClick={handleBack} sx={{ minWidth: 100 }}>
+                      {t("buttons.back", { defaultValue: "Back" })}
+                    </Button>
+                  )}
                   <Button
-                    variant="outlined"
-                    onClick={handleBack}
+                    variant="contained"
+                    color="primary"
+                    onClick={() => (isLastStep ? handleSubmit() : handleNext())}
                     sx={{ minWidth: 100 }}
                   >
-                    {t("buttons.back", { defaultValue: "Back" })}
+                    {isLastStep ? t("buttons.submit", { defaultValue: "Submit" }) : t("buttons.next", { defaultValue: "Next" })}
                   </Button>
-                )}
-                <Button
-                  variant="contained"
-                  color="primary"
-                  onClick={() => {
-                    if (isLastStep) {
-                      handleSubmit();
-                    } else {
-                      handleNext();
-                    }
-                  }}
-                  sx={{ minWidth: 100 }}
-                >
-                  {isLastStep 
-                    ? t("buttons.submit", { defaultValue: "Submit" })
-                    : t("buttons.next", { defaultValue: "Next" })}
-                </Button>
+                </Box>
               </Box>
-            </Box>
-          ) : (
-            <Alert severity="error" sx={{ mt: 6 }}>
-              <Typography variant="h6" sx={{ mb: 1, fontWeight: 600 }}>
-                Step Not Found
-              </Typography>
-              <Typography variant="body2">
-                The current step could not be loaded. Please refresh the page or check your configuration.
-              </Typography>
-            </Alert>
+            </>
           )}
         </Box>
       </Box>
