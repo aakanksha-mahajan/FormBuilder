@@ -10,20 +10,23 @@ interface Props {
 const ButtonGroup: React.FC<Props> = ({ field, onAction }) => {
     const { t } = useTranslation();
     return (
-        <Box sx={{
+        <Box 
+        data-testid="button-group-container"
+        sx={{
             mt: 4,
             display: "flex",
             justifyContent: "flex-end",
             gap: 2,
         }}>
-            {field.buttons?.map((btn) => (
-                <Button variant={btn.primary ? "contained" : "outlined"}
+            {field.buttons?.map((btn,index) => (
+                <Button 
+                key={btn.label}
+          data-testid={`action-btn-${index}`}
+                variant={btn.primary ? "contained" : "outlined"}
                     sx={{
                         textTransform: "none",
                         px: 4,
                     }}
-
-                    key={btn.label}
                     onClick={() => onAction(btn.action)}
                 >
                     {t(`buttons.${btn.action}`, { defaultValue: btn.label })}

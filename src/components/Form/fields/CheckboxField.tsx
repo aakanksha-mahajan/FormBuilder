@@ -19,16 +19,18 @@ const CheckboxField: React.FC<Props> = ({
   return (
     <>
       <FormControlLabel
+      data-testid="checkbox-field-container"
         control={
           <Checkbox
             checked={!!value}
+             data-testid="checkbox-field-input"
             onChange={(e) => onChange(field.id, e.target.checked)}
           />
         }
         label={t(`fields.${field.id}.label`, { defaultValue: field.label })}
       />
       {error && (
-        <FormHelperText error>
+        <FormHelperText error  data-testid="checkbox-field-error">
           {t(error, { defaultValue: error })}
         </FormHelperText>
       )}

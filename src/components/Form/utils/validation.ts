@@ -105,6 +105,7 @@ export const validateField = (field: Field, value: any): string => {
       }
 
       // Check file type
+      
       if (field.fileConfig?.allowedTypes && field.fileConfig.allowedTypes.length > 0) {
         const fileName = file.name || "";
         const fileExtension = fileName.split(".").pop()?.toLowerCase() || "";

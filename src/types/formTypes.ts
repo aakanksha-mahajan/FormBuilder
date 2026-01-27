@@ -48,7 +48,7 @@ export interface FileConfig {
 // Button config
 export interface ActionButton {
   label: string;
-  action: "SAVE_DRAFT" | "SUBMIT" | "NEXT" | "PREV" | "BACK" | "REDIRECT" | "DOWNLOAD_PDF";
+  action: "SAVE_DRAFT" | "SUBMIT" | "NEXT" | "PREV" | "BACK" | "REDIRECT" | "DOWNLOAD_PDF" | "CANCEL"   ;
   primary?: boolean;
   value?: string;
 }

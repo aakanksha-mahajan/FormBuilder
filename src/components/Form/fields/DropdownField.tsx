@@ -16,6 +16,7 @@ const DropdownField: React.FC<Props> = ({ field, value, error, onChange }) => {
       select
       fullWidth
       margin="normal"
+      data-testid={`dropdown-${field.id}`} 
       label={t(`fields.${field.id}.label`, { defaultValue: field.label })}
       required={field.mandatory}
       value={value || ""}
@@ -25,7 +26,7 @@ const DropdownField: React.FC<Props> = ({ field, value, error, onChange }) => {
        sx={{ mb: 2 }}
     >
       {field.options?.map((option) => (
-        <MenuItem key={option.value} value={option.value}>
+        <MenuItem key={option.value} value={option.value}  data-testid={`dropdown-option-${option.value}`} >
           {t(`fields.${field.id}.options.${option.value}`, {
             defaultValue: option.label,
           })}

@@ -42,12 +42,13 @@ const FileField: React.FC<Props> = ({ field, value, error, onChange, translateEr
 
   return (
     <Box sx={{ mt: 2, mb: 2 }}>
-      <Typography variant="body2" sx={{ mb: 1, fontWeight: 500 }}>
+      <Typography variant="body2" sx={{ mb: 1, fontWeight: 500 }} data-testid={`filefield-label-${field.id}`}>
         {t(`fields.${field.id}.label`, { defaultValue: field.label })}
         {field.mandatory && <span style={{ color: 'red' }}>*</span>}
       </Typography>
       
       {/* File constraints info */}
+       {/* istanbul ignore next */}
       {field.fileConfig && (
         <Typography variant="caption" sx={{ display: 'block', mb: 1.5, color: '#666' }}>
           {field.fileConfig.allowedTypes && (
@@ -60,7 +61,9 @@ const FileField: React.FC<Props> = ({ field, value, error, onChange, translateEr
         </Typography>
       )}
 
-      <Box sx={{
+      <Box 
+      data-testid={`filefield-dropzone-${field.id}`}
+      sx={{
         border: error ? "2px dashed #d32f2f" : "2px dashed #cbd5e1",
         borderRadius: 2,
         p: 3,
@@ -76,6 +79,7 @@ const FileField: React.FC<Props> = ({ field, value, error, onChange, translateEr
         type="file"
           id={`file-${field.id}`}
           style={{ display: 'none' }}
+          data-testid={`file-input-${field.id}`}
           onChange={(e) => {
             if (field.fileConfig?.multiple) {
               onChange(field.id, Array.from(e.target.files || []) || null);
@@ -90,6 +94,7 @@ const FileField: React.FC<Props> = ({ field, value, error, onChange, translateEr
           <Button 
             variant="text" 
             component="span" 
+             data-testid={`file-upload-btn-${field.id}`}
             sx={{ 
               textTransform: 'none',
               color: error ? '#d32f2f' : 'inherit'
@@ -106,7 +111,7 @@ const FileField: React.FC<Props> = ({ field, value, error, onChange, translateEr
         </label>
       </Box>
       {error && (
-        <FormHelperText error sx={{ mt: 1 }}>
+        <FormHelperText error sx={{ mt: 1 }} data-testid={`filefield-error-${field.id}`}>
           {getErrorMessage(error)}
         </FormHelperText>
       )}

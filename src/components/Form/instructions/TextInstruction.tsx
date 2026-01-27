@@ -8,6 +8,7 @@ const TextInstruction: React.FC<Props> = ({ value }) => {
   return (
     <Typography 
       variant="body1" 
+       data-testid="text-instruction"
       sx={{ 
         // mb: 1,
         textAlign: 'center',

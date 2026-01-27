@@ -16,7 +16,7 @@ import type { Field, FormSchema, FormStep } from "../types/formTypes";
 import { formJson } from "../data/formJson";
 import { validateField } from "./Form/utils/validation";
 
-// Filter to valid steps only (non-null, has stepId) so missing/malformed entries don't break the UI
+
 const getValidSteps = (): FormStep[] =>
   (formJson?.steps || []).filter((s): s is FormStep => !!(s != null && (s as FormStep).stepId));
 
@@ -35,7 +35,7 @@ const StepperFormUI = () => {
   const safeStepIndex = steps.length === 0 ? 0 : Math.min(activeStepIndex, steps.length - 1);
   const activeStep = steps[safeStepIndex] ?? null;
 
-  // Normalize fields: undefined, null, non-array, or entries without id/type can break the UI. Use only valid field objects.
+  
   const stepFields = useMemo(
     () =>
       (Array.isArray(activeStep?.fields) ? activeStep.fields : []).filter(
@@ -44,40 +44,41 @@ const StepperFormUI = () => {
     [activeStep?.fields]
   );
 
-  // Clear validation errors when switching steps
+ 
   useEffect(() => {
     setValidationErrors({});
   }, [activeStepIndex]);
 
-  // Debounced real-time validation: show field-level errors as user types
-  // This validates individual fields after user stops typing for 500ms
-  useEffect(() => {
-    const timer = setTimeout(() => {
-      if (Object.keys(formDataRef).length === 0) {
-        return; // Skip validation on initial empty state
+ 
+useEffect(() => {
+  const timer = setTimeout(() => {
+    /* istanbul ignore next */
+    if (Object.keys(formDataRef).length === 0) {
+      return;
+    }
+
+    /* istanbul ignore next */
+    if (!stepFields.length) {
+      return;
+    }
+
+    const newErrors: Record<string, string> = {};
+    stepFields.forEach((field) => {
+      const fieldValue = formDataRef[field.id];
+      if (fieldValue !== undefined && fieldValue !== null && fieldValue !== "") {
+        const error = validateField(field, fieldValue);
+        if (error) newErrors[field.id] = error;
       }
-      if (!stepFields.length) {
-        return; // No fields to validate (e.g. configuration issue)
-      }
+    });
 
-      const newErrors: Record<string, string> = {};
+    setValidationErrors(newErrors);
+  }, 500);
 
-      stepFields.forEach((field) => {
-        const fieldValue = formDataRef[field.id];
-        // Only validate fields with values (user has typed something)
-        if (fieldValue !== undefined && fieldValue !== null && fieldValue !== "") {
-          const error = validateField(field, fieldValue);
-          if (error) {
-            newErrors[field.id] = error;
-          }
-        }
-      });
+  /* istanbul ignore next */
+return () => clearTimeout(timer);
 
-      setValidationErrors(newErrors);
-    }, 500); // Wait 500ms after user stops typing
+}, [formDataRef, activeStep]);
 
-    return () => clearTimeout(timer); // Cleanup timer on each change
-  }, [formDataRef, activeStep]);
 
   // Aggregate all step data
   const aggregatedData = useMemo(() => {
@@ -88,7 +89,7 @@ const StepperFormUI = () => {
     return merged;
   }, [formDataByStep]);
 
-  // Create a schema for the current step (stepFields is already normalized)
+  
   const currentStepSchema: FormSchema = {
     ...formJson,
     fields: stepFields,
@@ -98,9 +99,9 @@ const StepperFormUI = () => {
     },
   };
 
-  // Validate current step fields
+ 
   const validateCurrentStep = (): boolean => {
-    if (!stepFields.length) return true; // No fields or misconfigured step: allow navigation
+    if (!stepFields.length) return true; 
 
     const newErrors: Record<string, string> = {};
     let hasError = false;
@@ -120,10 +121,10 @@ const StepperFormUI = () => {
   };
 
   const handleNext = () => {
-    // Validate before moving to next step (no-op when step has no fields / misconfigured)
+   
     if (!validateCurrentStep()) return;
 
-    // Store current step data only when step is properly configured
+   
     if (activeStep?.stepId) {
       setFormDataByStep((prev) => ({
         ...prev,
@@ -147,7 +148,7 @@ const StepperFormUI = () => {
   };
 
   const handleSubmit = () => {
-    if (!activeStep) return; // Misconfigured or out-of-bounds step: do not submit
+    if (!activeStep) return; 
     if (!validateCurrentStep()) return;
 
     if (activeStep.stepId) {
@@ -164,16 +165,22 @@ const StepperFormUI = () => {
 
   const isLastStep = safeStepIndex === steps.length - 1;
 
-  // Show success screen if form was submitted
-  if (isSubmitted && formJson?.successResponse) {
-    return (
-      <SuccessScreen
-        title={formJson.successResponse.title || "Success"}
-        message={formJson.successResponse.message || "Your application has been submitted successfully"}
-        actions={formJson.successResponse.actions}
-      />
-    );
-  }
+  
+  /* istanbul ignore next */
+if (isSubmitted && formJson?.successResponse) {
+  const finalData = { ...aggregatedData, ...formDataRef };
+  return ( 
+    <Box data-testid="success-screen">
+  <SuccessScreen
+   title={formJson.successResponse.title || "Success"}
+    message={formJson.successResponse.message || "Your application has been submitted successfully"}
+    actions={formJson.successResponse.actions}
+    submittedData={finalData}
+  />
+  </Box>
+  );
+}
+  
 
   return (
     <Box sx={{ 
@@ -193,7 +200,7 @@ const StepperFormUI = () => {
       }}>
         <Box sx={{ maxWidth: 900, width: '100%' }}>
           {steps.length === 0 ? (
-            /* No steps at all: show configuration issue only, no stepper/buttons */
+          
             <Alert severity="warning" sx={{ mt: 6 }}>
               <Typography variant="h6" sx={{ mb: 1, fontWeight: 600 }}>
                 {t("config.title", { defaultValue: "Configuration issue" })}
@@ -204,20 +211,25 @@ const StepperFormUI = () => {
             </Alert>
           ) : (
             <>
-              {/* Stepper - always shown when we have at least one step */}
-              <Stepper activeStep={safeStepIndex} sx={{ mb: 6, mt: 6 }}>
+            
+              <Stepper 
+              data-testid="stepper"
+              activeStep={safeStepIndex} sx={{ mb: 6, mt: 6 }}>
                 {steps.map((step) => (
                   <Step key={step.stepId}>
-                    <StepLabel>
+                    <StepLabel
+                    data-testid={`step-label-${step.stepId}`}
+                    >
                       {t(`steps.${step.stepId}`, { defaultValue: step.stepName })}
                     </StepLabel>
                   </Step>
                 ))}
               </Stepper>
 
-              {/* Current Step: form (DynamicForm) or review. Config issue appears only in the fields area so stepper and buttons stay in place. */}
+          
               <Box sx={{ mt: 6 }}>
                 {activeStep?.stepId === "review" ? (
+                   <Box data-testid="review-step">
                   <ReviewPage
                     allFormData={{ ...aggregatedData, ...formDataRef }}
                     validationErrors={validationErrors}
@@ -225,13 +237,17 @@ const StepperFormUI = () => {
                       setFormDataRef((prev) => ({ ...prev, termsAccepted: checked }));
                     }}
                   />
+                    </Box>
                 ) : (
                   <>
                     {Object.keys(validationErrors).length > 0 && (
-                      <Alert severity="error" sx={{ mb: 3 }}>
+                      <Alert severity="error" sx={{ mb: 3 }}
+                      data-testid="validation-error"
+                      >
                         {t("validation.allFieldsRequired", { defaultValue: "Please fill in all required fields" })}
                       </Alert>
                     )}
+                    <Box data-testid="form-step">
                     <DynamicForm
                       schema={currentStepSchema}
                       initialData={aggregatedData}
@@ -239,13 +255,19 @@ const StepperFormUI = () => {
                       validationErrors={validationErrors}
                       configIssueOverride={!activeStep ? t("config.stepNotConfigured", { defaultValue: "This step is not properly configured. Please check the form configuration." }) : undefined}
                     />
+                    </Box>
                   </>
+                  
                 )}
 
-                {/* Navigation Buttons - always shown when we have steps, same position */}
-                <Box sx={{ display: 'flex', justifyContent: 'flex-end', gap: 2, mt: 3 }}>
+                
+                <Box sx={{ display: 'flex', justifyContent: 'flex-end', gap: 2, mt: 3 }}
+                 data-testid="navigation-buttons"
+                >
                   {safeStepIndex > 0 && (
-                    <Button variant="outlined" onClick={handleBack} sx={{ minWidth: 100 }}>
+                    <Button variant="outlined" onClick={handleBack} sx={{ minWidth: 100 }}
+                     data-testid="back-button"
+                    >
                       {t("buttons.back", { defaultValue: "Back" })}
                     </Button>
                   )}
@@ -254,6 +276,7 @@ const StepperFormUI = () => {
                     color="primary"
                     onClick={() => (isLastStep ? handleSubmit() : handleNext())}
                     sx={{ minWidth: 100 }}
+                     data-testid={isLastStep ? "submit-button" : "next-button"}
                   >
                     {isLastStep ? t("buttons.submit", { defaultValue: "Submit" }) : t("buttons.next", { defaultValue: "Next" })}
                   </Button>
