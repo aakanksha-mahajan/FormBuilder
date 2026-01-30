@@ -41,14 +41,8 @@ const StepperFormUI = () => {
       (Array.isArray(activeStep?.fields) ? activeStep.fields : []).filter(
         (f): f is Field => !!f && typeof f === "object" && "id" in f
       ),
-    [activeStep?.fields]
+    [activeStep]
   );
-
- 
-  useEffect(() => {
-    setValidationErrors({});
-  }, [activeStepIndex]);
-
  
 useEffect(() => {
   const timer = setTimeout(() => {

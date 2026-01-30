@@ -114,12 +114,14 @@ const DynamicForm: React.FC<Props> = ({ schema, initialData, onAction, onFormDat
 
   // Keep stepper data in sync when switching steps
   useEffect(() => {
+     // eslint-disable-next-line react-hooks/set-state-in-effect -- sync parent-provided errors
     if (initialData) setFormData(initialData);
   }, [initialData]);
 
   // Update errors from parent validation
   useEffect(() => {
     if (validationErrors) {
+       // eslint-disable-next-line react-hooks/set-state-in-effect -- sync parent-provided errors
       setErrors(validationErrors);
     }
   }, [validationErrors]);
@@ -367,7 +369,6 @@ const DynamicForm: React.FC<Props> = ({ schema, initialData, onAction, onFormDat
 
       if (activeSchema.successResponse.redirect) {
         window.location.assign(activeSchema.successResponse.redirect.value);
-        // window.location.assign=(activeSchema.successResponse.redirect.value);
       }
     } catch {
       setOpenErrorDialog(true);
