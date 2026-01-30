@@ -4,9 +4,9 @@ import type { Field } from "../../../types/formTypes";
 
 interface Props {
   field: Field;
-  value: any;
+  value: string | number | null;
   error?: string;
-  onChange: (id: string, value: any) => void;
+  onChange: (id: string, value: string) => void;
   // Added type prop to support "time" or "text"
   type?: string;
   // Added prop for error translation

@@ -33,20 +33,22 @@ import CheckboxField from "./fields/CheckboxField";
 import FileField from "./fields/FileField";
 import ButtonGroup from "./fields/ButtonGroup";
 
+type FormValue =string | number | boolean | null | File | File[];
+
 interface Props {
   /** Optional: when omitted, falls back to existing single-page `formJson` */
   schema?: FormSchema;
   /** Optional: prefill values (used by stepper aggregated data) */
-  initialData?: Record<string, any>;
+  initialData?: Record<string, FormValue>;
   /**
    * Optional: override button actions (used by stepper flow).
    * If provided, it receives the action + current step data after validations pass.
    */
-  onAction?: (action: string, data: Record<string, any>) => void;
+  onAction?: (action: string, data: Record<string, FormValue>) => void;
   /**
    * Optional: callback to get current form data (used by StepperFormUI)
    */
-  onFormDataChange?: (data: Record<string, any>) => void;
+  onFormDataChange?: (data: Record<string, FormValue>) => void;
   /**
    * Optional: validation errors from parent
    */
@@ -61,7 +63,7 @@ const DynamicForm: React.FC<Props> = ({ schema, initialData, onAction, onFormDat
   const { t, i18n } = useTranslation();
   const activeSchema = schema ?? formJson;
 
-  const [formData, setFormData] = useState<Record<string, any>>(
+  const [formData, setFormData] = useState<Record<string, FormValue>>(
     initialData ?? {}
   );
   const [errors, setErrors] = useState<Record<string, string>>(validationErrors ?? {});
@@ -130,14 +132,14 @@ const DynamicForm: React.FC<Props> = ({ schema, initialData, onAction, onFormDat
   }, [formData, onFormDataChange]);
 
 
-  const handleChange = (id: string, value: any) => {
+  const handleChange = (id: string, value: FormValue) => {
     setFormData((prev) => {
       const newData = { ...prev, [id]: value };
 
       // Automatic calculation logic
       if (id === "startTime" || id === "stopTime") {
-        const start = newData.startTime;
-        const stop = newData.stopTime;
+        const start = newData.startTime as string | undefined;
+        const stop = newData.stopTime as string | undefined;
 
         if (start && stop) {
           const [startH, startM] = start.split(':').map(Number);
@@ -219,7 +221,7 @@ const DynamicForm: React.FC<Props> = ({ schema, initialData, onAction, onFormDat
           data-testid={`field-${field.id}`}
             key={field.id}
             field={field}
-            value={value}
+            value={value as string | number | null}
             error={error}
             onChange={handleChange}
             type={field.type === "time" ? "time" : field.type === "date" ? "date" : "text"}
@@ -232,7 +234,7 @@ const DynamicForm: React.FC<Props> = ({ schema, initialData, onAction, onFormDat
           data-testid={`field-${field.id}`}
             key={field.id}
             field={field}
-            value={value}
+            value={value as string | number | null}
             error={error}
             onChange={handleChange}
           />
@@ -243,7 +245,7 @@ const DynamicForm: React.FC<Props> = ({ schema, initialData, onAction, onFormDat
           data-testid={`field-${field.id}`}
             key={field.id}
             field={field}
-            value={value}
+            value={value as string | number | null}
             error={error}
             onChange={handleChange}
           />
@@ -255,7 +257,7 @@ const DynamicForm: React.FC<Props> = ({ schema, initialData, onAction, onFormDat
           data-testid={`field-${field.id}`}
             key={field.id}
             field={field}
-            value={value}
+            value={value as boolean}
             error={error}
             onChange={handleChange}
           />
@@ -267,7 +269,7 @@ const DynamicForm: React.FC<Props> = ({ schema, initialData, onAction, onFormDat
           data-testid={`field-${field.id}`}
             key={field.id}
             field={field}
-            value={value}
+            value={value as string | number | null}
             error={error}
             onChange={handleChange}
             type="textarea"
@@ -280,7 +282,7 @@ const DynamicForm: React.FC<Props> = ({ schema, initialData, onAction, onFormDat
           data-testid={`field-${field.id}`}
             key={field.id}
             field={field}
-            value={value}
+            value={value as File | File[] | null}
             error={error}
             onChange={handleChange}
             translateError={translateError}
@@ -364,9 +366,10 @@ const DynamicForm: React.FC<Props> = ({ schema, initialData, onAction, onFormDat
       );
 
       if (activeSchema.successResponse.redirect) {
-        window.location.href = activeSchema.successResponse.redirect.value;
+        window.location.assign(activeSchema.successResponse.redirect.value);
+        // window.location.assign=(activeSchema.successResponse.redirect.value);
       }
-    } catch (error) {
+    } catch {
       setOpenErrorDialog(true);
     }
   };

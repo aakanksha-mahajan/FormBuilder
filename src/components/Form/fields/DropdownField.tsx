@@ -4,9 +4,9 @@ import type { Field } from "../../../types/formTypes";
 
 interface Props {
   field: Field;
-  value: any;
+  value: string | number | null;
   error?: string;
-  onChange: (id: string, value: any) => void;
+  onChange: (id: string, value: string| number | null) => void;
 }
 
 const DropdownField: React.FC<Props> = ({ field, value, error, onChange }) => {

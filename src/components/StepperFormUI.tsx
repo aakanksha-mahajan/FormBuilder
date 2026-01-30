@@ -12,7 +12,7 @@ import { useTranslation } from "react-i18next";
 import DynamicForm from "./Form/DynamicForm";
 import SuccessScreen from "./SuccessScreen";
 import ReviewPage from "./ReviewPage";
-import type { Field, FormSchema, FormStep } from "../types/formTypes";
+import type { Field, FormSchema, FormStep ,FieldValue} from "../types/formTypes";
 import { formJson } from "../data/formJson";
 import { validateField } from "./Form/utils/validation";
 
@@ -26,9 +26,9 @@ const StepperFormUI = () => {
 
   const [activeStepIndex, setActiveStepIndex] = useState(0);
   const [formDataByStep, setFormDataByStep] = useState<
-    Record<string, Record<string, any>>
+    Record<string, Record<string, FieldValue>>
   >({});
-  const [formDataRef, setFormDataRef] = useState<Record<string, any>>({});
+  const [formDataRef, setFormDataRef] = useState<Record<string, FieldValue>>({});
   const [validationErrors, setValidationErrors] = useState<Record<string, string>>({});
   const [isSubmitted, setIsSubmitted] = useState(false);
 
@@ -82,7 +82,7 @@ return () => clearTimeout(timer);
 
   // Aggregate all step data
   const aggregatedData = useMemo(() => {
-    const merged: Record<string, any> = {};
+    const merged: Record<string, FieldValue> = {};
     Object.values(formDataByStep).forEach((stepData) => {
       Object.assign(merged, stepData);
     });

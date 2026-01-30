@@ -1,6 +1,7 @@
-import type { Field } from "../../../types/formTypes";
+import type { Field, FieldValue } from "../../../types/formTypes";
 
-export const validateField = (field: Field, value: any): string => {
+
+export const validateField = (field: Field, value: FieldValue): string => {
   // Mandatory check
   if (field.mandatory) {
     if (
@@ -14,7 +15,8 @@ export const validateField = (field: Field, value: any): string => {
   }
 
   // If not mandatory and no value, pass validation
-  if (!field.mandatory && (value === undefined || value === null || value === "")) {
+  if (!field.mandatory && 
+    (value === undefined || value === null || value === "")) {
     return "";
   }
 
@@ -42,25 +44,25 @@ export const validateField = (field: Field, value: any): string => {
   }
 
   // Min length check before regex
-  if (
-    field.validation?.minLength &&
-    value &&
-    value.length < field.validation.minLength
-  ) {
-    return `validation.minLength|${field.validation.minLength}`;
+  if (field.validation?.minLength) {
+    if (typeof value === "string" || Array.isArray(value)) {
+      if (value.length < field.validation.minLength) {
+        return `validation.minLength|${field.validation.minLength}`;
+      }
+    }
   }
+
 
   // Max length check
-  if (
-    field.validation?.maxLength &&
-    value &&
-    value.length > field.validation.maxLength
-  ) {
-    return `validation.maxLength|${field.validation.maxLength}`;
+  if (field.validation?.maxLength) {
+    if (typeof value === "string" || Array.isArray(value)) {
+      if (value.length > field.validation.maxLength) {
+        return `validation.maxLength|${field.validation.maxLength}`;
+      }
+    }
   }
-
   // Regex validation - use field errorMessage if provided
-  if (field.validation?.regex && value) {
+  if (field.validation?.regex && typeof value === "string") {
     const regex = new RegExp(field.validation.regex);
     if (!regex.test(value)) {
       return field.validation.errorMessage || "validation.invalidFormat";
@@ -68,20 +70,13 @@ export const validateField = (field: Field, value: any): string => {
   }
 
   // Date range validation (minDate, maxDate)
-  if (field.type === "date" && value) {
-    if (field.validation?.minDate) {
-      const minDate = new Date(field.validation.minDate);
-      const selectedDate = new Date(value);
-      if (selectedDate < minDate) {
-        return field.validation.errorMessage || "validation.invalidDate";
-      }
+  if (field.type === "date" && typeof value === "string") {
+    const selectedDate = new Date(value);
+    if (field.validation?.minDate && selectedDate < new Date(field.validation.minDate)) {
+      return field.validation.errorMessage || "validation.invalidDate";
     }
-    if (field.validation?.maxDate) {
-      const maxDate = new Date(field.validation.maxDate);
-      const selectedDate = new Date(value);
-      if (selectedDate > maxDate) {
-        return field.validation.errorMessage || "validation.invalidDate";
-      }
+    if (field.validation?.maxDate && selectedDate > new Date(field.validation.maxDate)) {
+      return field.validation.errorMessage || "validation.invalidDate";
     }
   }
 
@@ -93,24 +88,24 @@ export const validateField = (field: Field, value: any): string => {
   // File validation (type and size)
   if (field.type === "file" && value) {
     const files = Array.isArray(value) ? value : [value];
-    
+
     // Check max files limit
     if (field.fileConfig?.maxFiles && files.length > field.fileConfig.maxFiles) {
       return `validation.maxFilesExceeded|${field.fileConfig.maxFiles}`;
     }
-    
+
     for (const file of files) {
       if (!file || typeof file !== "object") {
         continue;
       }
 
       // Check file type
-      
+
       if (field.fileConfig?.allowedTypes && field.fileConfig.allowedTypes.length > 0) {
         const fileName = file.name || "";
         const fileExtension = fileName.split(".").pop()?.toLowerCase() || "";
         const allowedTypes = field.fileConfig.allowedTypes.map((t: string) => t.toLowerCase());
-        
+
         if (!allowedTypes.includes(fileExtension)) {
           const allowedTypesStr = field.fileConfig.allowedTypes.join(",").toUpperCase();
           return `validation.fileTypeNotAllowed|${allowedTypesStr}`;

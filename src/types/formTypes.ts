@@ -18,7 +18,8 @@ export type FieldType =
   | "time"
   | "radio"
   | "textarea"
-  | "date";
+  | "date"
+  | "checkbox-group";
 
 // Validation
 export interface ValidationRule {
@@ -36,6 +37,7 @@ export interface FieldOption {
   label: string;
   value: string;
 }
+export type FieldValue = string | number | boolean | File | File[] | null;
 
 // File config
 export interface FileConfig {

@@ -4,6 +4,7 @@ import jsPDF from "jspdf";
 import html2canvas from "html2canvas";
 import { useTranslation } from "react-i18next";
 import { formJson } from "../data/formJson";
+import type { Field,FieldOption,FieldValue,FormStep } from "../types/formTypes";
 
 interface SuccessScreenProps {
   title: string;
@@ -13,7 +14,7 @@ interface SuccessScreenProps {
     action: string;
     value?: string;
   }>;
-  submittedData?: Record<string, any>;
+  submittedData?: Record<string, FieldValue>;
 }
 
 const SuccessScreen: React.FC<SuccessScreenProps> = ({
@@ -31,12 +32,12 @@ const SuccessScreen: React.FC<SuccessScreenProps> = ({
     if (!submittedData || Object.keys(submittedData).length === 0) return [];
 
    
-    const formatValueForPDF = (value: any, field: any): string => {
+    const formatValueForPDF = (value: FieldValue, field: Field): string => {
       if (Array.isArray(value)) {
         if (field?.type === "file") {
-          const fileNames = value.map((file: any) => {
-            if (file && typeof file === "object" && file.name) {
-              return file.name;
+          const fileNames = value.map((file) => {
+            if (file && typeof file === "object" && "name" in file) {
+              return (file as File).name;
             }
             return String(file);
           });
@@ -46,7 +47,10 @@ const SuccessScreen: React.FC<SuccessScreenProps> = ({
       }
 
       if (field?.type === "radio" || field?.type === "dropdown") {
-        const option = field?.options?.find((opt: any) => opt.value === value);
+        const option =
+        typeof value === "string"
+            ? field.options?.find((opt:FieldOption) => opt.value === value)
+            : undefined;
         return option
           ? t(`fields.${field.id}.options.${option.value}`, { defaultValue: option.label })
           : String(value);
@@ -69,16 +73,16 @@ const SuccessScreen: React.FC<SuccessScreenProps> = ({
     const sections: Array<{
       stepName: string;
       stepId: string;
-      data: Array<{ label: string; value: string; field: any }>;
+      data: Array<{ label: string; value: string; field: Field }>;
     }> = [];
 
  
     const formSteps = (formJson?.steps || []).filter(
-      (step) => step != null && step.stepId !== "review"
+      (step): step is FormStep => step != null && step.stepId !== "review"
     );
 
     formSteps.forEach((step) => {
-      const stepData: Array<{ label: string; value: string; field: any }> = [];
+      const stepData: Array<{ label: string; value: string; field: Field }> = [];
       const stepFields = step?.fields || [];
 
       stepFields.forEach((field) => {
