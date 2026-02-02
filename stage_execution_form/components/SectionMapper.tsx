@@ -9,8 +9,8 @@ import { RequirementsSectionUI } from './sections/RequirementsSectionUI';
 interface SectionMapperProps {
   section: FormSection;
   locked: boolean;
-  onUpdate: (sectionId: string, itemId: string, key: string, newValue: any) => void;
-  onAddEvidence: (sectionId: string, itemId: string) => void;
+  onUpdate: (sectionId: string, itemId: string, key: string, newValue: unknown) => void;
+  onAddEvidence: (sectionId: string, itemId: string,file:File) => void;
 }
 
 export const SectionMapper: React.FC<SectionMapperProps> = ({ section, locked, onUpdate ,onAddEvidence}) => {

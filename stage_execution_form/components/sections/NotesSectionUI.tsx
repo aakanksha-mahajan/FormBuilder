@@ -27,7 +27,6 @@ export const NotesSectionUI: React.FC<NotesProps> = ({ data, onUpdate, locked })
         placeholder="Add any additional observations or notes here..."
         disabled={locked}
         value={data.value || ""}
-        // Notes mein itemId ki jagah hum empty string bhejte hain kyunki ye single field hai
         onChange={(e) => onUpdate(data.id, "", "value", e.target.value)}
         sx={{
           '& .MuiOutlinedInput-root': {

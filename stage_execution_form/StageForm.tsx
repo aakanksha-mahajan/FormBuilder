@@ -4,62 +4,98 @@ import { stageExecutionData } from './data/stageData';
 import { Header } from './components/Header';
 import { SectionMapper } from './components/SectionMapper';
 import { ApprovalBanner } from "./components/sections/ApprovalBanner";
+import type { ChecklistItem, EvidenceItem } from './types/stageTypes';
 
 const StageForm: React.FC = () => {
     const [formData, setFormdata] = useState(stageExecutionData);
 
    
-    const handleUpdate = (sectionId: string, itemId: string, key: string, newValue: any) => {
+    const handleUpdate = (sectionId: string, itemId: string, key: string, newValue: unknown) => {
         setFormdata((prevData) => ({
             ...prevData,
             sections: prevData.sections.map((section) => {
                 if (section.id !== sectionId) return section;
 
-               
                 if (section.type === 'textarea') {
-                    return { ...section, value: newValue }; 
+                    if (key === 'value' && typeof newValue === 'string') {
+                        return { ...section, value: newValue };
+                    }
+                    return section;
                 }
 
-                return {
-                    ...section,
-                    items: section.items.map((item: any) => {
-                        if (item.id !== itemId) return item;
+                if (section.type === 'checklist') {
+                    return {
+                        ...section,
+                        items: section.items.map((item) => {
+                            if (item.id !== itemId) return item;
+                            return updateChecklistItem(item, key, newValue);
+                        }),
+                    };
+                }
 
-                       
-                        if (section.type === 'checklist') {
-                            return {
-                                ...item,
-                                response: {
-                                    ...(item.response || { status: 'PENDING', comment: '' }),
-                                    [key]: newValue,
-                                    // Status COMPLETED hote hi auto-timestamp
-                                    completedAt: key === 'status' && newValue === 'COMPLETED'
-                                        ? new Date().toISOString()
-                                        : item.response?.completedAt
-                                }
-                            };
-                        }
+                if (section.type === 'requirements') {
+                    return {
+                        ...section,
+                        items: section.items.map((item) => {
+                            if (item.id !== itemId) return item;
+                            if (key === 'status' && typeof newValue === 'string') {
+                                return { ...item, status: newValue };
+                            }
+                            return item;
+                        }),
+                    };
+                }
 
-                       
-                        return { ...item, [key]: newValue };
-                    }),
-                };
+                return section;
             }),
         }));
     };
 
-   // StageForm.tsx mein ye variable banayein
-const isFormValid = formData.sections.every(section => {
-  if (section.type === 'checklist') {
-    return section.items.every(item => !item.required || item.response?.status === 'COMPLETED');
-  }
- 
-  if (section.id === 'requirements') {
-    return section.items.every(item => !item.required || item.status === 'COMPLETED');
-  }
-  return true;
-});
+    const updateChecklistItem = (item: ChecklistItem, key: string, newValue: unknown) => {
+        const response = item.response || { status: 'PENDING', comment: '', completedAt: '' };
+
+        if (key === 'status' && typeof newValue === 'string') {
+            return {
+                ...item,
+                response: {
+                    ...response,
+                    status: newValue,
+                    completedAt: newValue === 'COMPLETED' ? new Date().toISOString() : ''
+                }
+            };
+        }
+
+        if (key === 'comment' && typeof newValue === 'string') {
+            return {
+                ...item,
+                response: {
+                    ...response,
+                    comment: newValue
+                }
+            };
+        }
+
+        return item;
+    };
+    const isFormValid = formData.sections.every((section) => {
+        if (section.type === 'checklist') {
+            return section.items.every((item) => {
+                if (!item.required) return true;
+                const hasCompleted = item.response?.status === 'COMPLETED';
+                const hasEvidence = (item.evidence || []).length > 0;
+                return hasCompleted && hasEvidence;
+            });
+        }
+
+        if (section.type === 'requirements') {
+            return section.items.every((item) => !item.required || item.status === 'COMPLETED');
+        }
+
+        return true;
+    });
+
     const handleFinish = () => {
+        if (!isFormValid) return;
     setFormdata((prev) => ({
         ...prev,
         status: "approved", 
@@ -72,27 +108,27 @@ const isFormValid = formData.sections.every(section => {
 };
 
   
-    const handleAddEvidence = (sectionId: string, itemId: string) => {
-        const newFile = {
-            fileName: `Evidence-${Math.floor(Math.random() * 1000)}.jpg`,
-            fileSizeKB: 450,
-            uploadedAt: new Date().toISOString()
+    const handleAddEvidence = (sectionId: string, itemId: string ,file :File) => {
+        const newEvidence: EvidenceItem = {
+            fileName: file.name,
+            fileSizeKB: Math.max (1, Math.round(file.size / 1024)),
+            uploadedAt: new Date().toISOString(),
+            url: URL.createObjectURL(file)
         };
 
         setFormdata((prevData) => ({
             ...prevData,
             sections: prevData.sections.map((section) => {
                 if (section.id !== sectionId) return section;
-
-                               if (section.type === 'textarea') return section;
+                if (section.type !== 'checklist') return section;
 
                 return {
                     ...section,
-                    items: section.items.map((item: any) => {
+                    items: section.items.map((item) => {
                         if (item.id !== itemId) return item;
                         return {
                             ...item,
-                            evidence: [...(item.evidence || []), newFile] 
+                            evidence: [...(item.evidence || []), newEvidence]
                         };
                     })
                 };
@@ -116,7 +152,9 @@ const isFormValid = formData.sections.every(section => {
                         header={formData.header}
                         context={formData.context}
                         status={formData.status}
+                        canFinish={isFormValid}
                         onFinish={handleFinish} 
+                        // showErrors={!isFormValid}
                     />
 
             

@@ -24,7 +24,14 @@ export interface ChecklistItem {
     comment: string;
     completedAt: string;
   } | null;
-  evidence: any[]; 
+  evidence: EvidenceItem[]; 
+}
+
+export interface EvidenceItem {
+  fileName: string;
+  fileSizeKB: number;
+  uploadedAt: string;
+  url: string;
 }
 
 // Discriminated Union for Sections

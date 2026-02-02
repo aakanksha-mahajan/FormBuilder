@@ -1,5 +1,5 @@
-import React from 'react';
-import { Box, Typography, Stack, TextField, Chip, Button, Paper, IconButton } from '@mui/material';
+import React ,{useState} from 'react';
+import { Box, Typography, Stack, TextField, Chip, Button, Paper, IconButton ,Dialog ,DialogContent,DialogActions,DialogTitle} from '@mui/material';
 import CheckCircleOutlineIcon from '@mui/icons-material/CheckCircleOutline';
 import PhotoCameraIcon from '@mui/icons-material/PhotoCamera';
 import VisibilityIcon from '@mui/icons-material/Visibility';
@@ -10,11 +10,42 @@ interface ChecklistProps {
     data: ChecklistSection;
     locked: boolean;
     onUpdate: (sectionId: string, itemId: string, key: string, newValue: any) => void;
-    onAddEvidence: (sectionId: string, itemId: string) => void;
+    onAddEvidence: (sectionId: string, itemId: string,file:File) => void;
 }
 
 export const ChecklistSectionUI: React.FC<ChecklistProps> = ({ data, locked, onUpdate, onAddEvidence }) => {
     const sectionId = data.id;
+    const [dialogOpen, setDialogOpen] = useState(false);
+    const [activeItemId, setActiveItemId] = useState<string | null>(null);
+    const [selectedFile, setSelectedFile] = useState<File | null>(null);
+    const [fileError, setFileError] = useState<string | null>(null);
+
+    const openEvidenceDialog = (itemId: string) => {
+        setActiveItemId(itemId);
+        setSelectedFile(null);
+        setFileError(null);
+        setDialogOpen(true);
+    };
+
+    const closeEvidenceDialog = () => {
+        setDialogOpen(false);
+        setActiveItemId(null);
+        setSelectedFile(null);
+        setFileError(null);
+    };
+
+    const handleSaveEvidence = () => {
+        if (!activeItemId || !selectedFile) {
+            setFileError('Please select a file to upload.');
+            return;
+        }
+        onAddEvidence(sectionId, activeItemId, selectedFile);
+        closeEvidenceDialog();
+    };
+
+    const handleOpenEvidence = (url: string) => {
+        window.open(url, '_blank', 'noopener,noreferrer');
+    };
 
     return (
         <Box sx={{ mb: 4 }}>
@@ -94,7 +125,7 @@ export const ChecklistSectionUI: React.FC<ChecklistProps> = ({ data, locked, onU
                             startIcon={<PhotoCameraIcon />}
                             size="small"
                             disabled={locked}
-                            onClick={() => onAddEvidence(sectionId, item.id)} 
+                            onClick={() => openEvidenceDialog(item.id)} 
                             sx={{ textTransform: 'none', borderRadius: 2, borderColor: '#d0d5dd', color: '#344054' }}
                         >
                             Add Evidence
@@ -107,20 +138,59 @@ export const ChecklistSectionUI: React.FC<ChecklistProps> = ({ data, locked, onU
                                         <PhotoCameraIcon sx={{ fontSize: 18, color: '#98a2b3' }} />
                                         <Box>
                                             <Typography variant="caption" sx={{ fontWeight: 600, display: 'block' }}>
-                                                {item.evidence[0].fileName}
+                                                {item.evidence[item.evidence.length - 1].fileName}
                                             </Typography>
                                             <Typography variant="caption" color="textSecondary">
-                                                Uploaded recently • {item.evidence[0].fileSizeKB} KB
+                                                Uploaded recently • {item.evidence[item.evidence.length - 1].fileSizeKB} KB
                                             </Typography>
                                         </Box>
                                     </Stack>
-                                    <IconButton size="small"><VisibilityIcon fontSize="small" /></IconButton>
+                                    <IconButton size="small" onClick={() => handleOpenEvidence(item.evidence[item.evidence.length - 1].url)}>
+                                        <VisibilityIcon fontSize="small" />
+                                    </IconButton>
                                 </Stack>
                             </Paper>
                         )}
                     </Box>
                 </Box>
             ))}
+            {/* Evidence Upload Dialog */}
+             <Dialog open={dialogOpen} onClose={closeEvidenceDialog} maxWidth="xs" fullWidth>
+                <DialogTitle>Add Evidence</DialogTitle>
+                <DialogContent>
+                    <Stack spacing={1.5} sx={{ mt: 1 }}>
+                        <Button component="label" variant="outlined">
+                            Choose Photo
+                            <input
+                                type="file"
+                                hidden
+                                accept="image/*"
+                                onChange={(e) => {
+                                    const file = e.target.files?.[0] || null;
+                                    setSelectedFile(file);
+                                    setFileError(null);
+                                }}
+                            />
+                        </Button>
+                        <Typography variant="caption" sx={{ color: '#667085' }}>
+                            {selectedFile ? selectedFile.name : 'No file selected'}
+                        </Typography>
+                        {fileError && (
+                            <Typography variant="caption" sx={{ color: '#d92d20' }}>
+                                {fileError}
+                            </Typography>
+                        )}
+                    </Stack>
+                </DialogContent>
+                <DialogActions sx={{ px: 3, pb: 2 }}>
+                    <Button onClick={closeEvidenceDialog} sx={{ textTransform: 'none' }}>
+                        Cancel
+                    </Button>
+                    <Button onClick={handleSaveEvidence} variant="contained" sx={{ textTransform: 'none' }}>
+                        Upload
+                    </Button>
+                </DialogActions>
+            </Dialog>
         </Box>
     );
 };
